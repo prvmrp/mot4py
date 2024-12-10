@@ -33,7 +33,7 @@ class Ztex():
             self.dev.write(0x06, 'RS', self.tmo)
             
     def _dacmd(self, n, a):
-        q = ((a['relt'] & 0xFFFFFFFFF) << 24) | ((a['bin'] & 0xFFFF) << 8) | (a['addr'] & 0xFF)
+        q = ((a['relt'] & 0xFFFFFFFFF) << 24) | ((a['bin'] & 0xFFFF) << 8) | ((a['addr'] << 1) & 0xFF)
         if a.get('br'):
             q |= (1 << 60)
         if a.get('nop'):
@@ -66,6 +66,7 @@ class Ztex():
             self.dev.write(0x06, self.buf, self.tmo)
             time.sleep(0.1)
             self.set_trg()
+            self.softrst()
         else:
             self._dump()
             
@@ -85,7 +86,7 @@ class Ztex():
         if self.dev:
             self.dev.write(0x06, b'ID', self.tmo)
             ret = self.dev.read(0x82, 4, self.tmo)
-            return (int(ret[0]), int(ret[1])) + (int(ret[2]), int(ret[3]))
+            return (int(ret[1]), int(ret[0])), (int(ret[3]), int(ret[2]))
         else:
             return (1, 0), (1, 0)
 
@@ -101,7 +102,7 @@ class Ztex():
             ctrl = (q >> 60) & 0xF
             k += 14
             sz -= 14
-            print( 'cmd = %s, addr = %d, ctrl = %s, cnt = %d, data = %s, addr = %s' % ((c1+c2).decode(), instr, hex(ctrl), cnt, hex(data), hex(addr)))
+            print( 'cmd = %s, mem. addr = %d, ctrl = %s, cnt = %d, data = %s, addr = %s' % ((c1+c2).decode(), instr, hex(ctrl), cnt, hex(data), hex(addr >> 1)))
         print('cmd = %s' % self.buf[k:].decode())        
                    
     def load(self, prog):

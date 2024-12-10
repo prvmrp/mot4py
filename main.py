@@ -117,6 +117,11 @@ def _run():
         except ValueError as err:
             error(err.args[0])
         state['run'] = True
+        if not state['gui']:
+            while state['run']:
+                time.sleep(1)
+                getstatcb()
+            
 
 def getstatcb():
     global state
@@ -137,8 +142,11 @@ def getstatcb():
     if s in ('I', 'E'):
         timer.stop()
         state['run'] = False
+    if state['gui']:
         update()
-    mainwin.statusbar.showMessage(msg, 0)
+        mainwin.statusbar.showMessage(msg, 0)
+    else:
+        print(msg)
         
 def runcb():
     _run()
@@ -147,25 +155,19 @@ def runcb():
     update()
 
 def resetcb():    
-    if state['debug']:
-        return
-    else:
-        fpga.reset()
-        if state['gui']:
-            msg = "FPGA reset" if fpga.dev else "FPGA not found"
-            mainwin.statusbar.showMessage(msg, 0)
+    fpga.reset()
+    if state['gui']:
+        msg = "FPGA reset" if fpga.dev else "FPGA not found"
+        mainwin.statusbar.showMessage(msg, 0)
             
 def stopcb():
     global state
     
-    if state['debug']:
-        return
-    else:
-        fpga.stop()
-        timer.stop()
-        state['run'] = False
-        mainwin.statusbar.showMessage('Prog. stopped', 0)    
-        update()
+    fpga.stop()
+    timer.stop()
+    state['run'] = False
+    mainwin.statusbar.showMessage('Prog. stopped', 0)    
+    update()
 
 def testcb():
     testwin.show()
@@ -409,7 +411,7 @@ class TestWin(QtWidgets.QWidget):
 if __name__ == "__main__":
 
     global lockfile, prog, state, fpga
-    state = {'gui':False, 'prog':None, 'run':False, 'debug':False}
+    state = {'gui':False, 'prog':None, 'run':False}
 
     #find if another instance is running
     lockfile = tempfile.gettempdir() + '/mot4.pid'
@@ -431,28 +433,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', help='Run directly a mot file without GUI ', dest='fname')
     parser.add_argument('-R', '--reset', help='just reset FPGA and quit', action='store_true')
-    parser.add_argument('-d', '--debug', help='debug mode. Bypass USB', action='store_true')
     parser.add_argument('-e', '--exttrg', help='External Trigger mode', action='store_true')
+    parser.add_argument('-i', '--info', help='Print FPGA info then quit', action='store_true')
 
     args = parser.parse_args()
 
-    state['debug'] = args.debug
-    if not state['debug']:
-        fpga = Ztex()
-        if fpga.dev:
-            fpga.exttrg = args.exttrg
-            fpga.set_trg()
-    
+    fpga = Ztex()
+    if fpga.dev:
+        fpga.exttrg = args.exttrg
+        fpga.set_trg()
+
+    if args.info:
+        state['gui'] = False
+        fwver, brdver = fpga.get_id()
+        print('Firmware Ver. %d.%d' % fwver)
+        print('Board Num. %d.%d' % brdver)
+        exit()
+            
     if args.fname is not None:
         state['gui'] = False
         prog = Parser(args.fname, Fundict)
         state['prog'] = args.fname
-        if not state['debug']:
-            fpga = Ztex()
-            if not fpga.dev:
-                error('FPGA not found!')
-            else:
-                _run()
+        if not fpga.dev:
+            error('FPGA not found!')
+        else:
+            _run()
         exit()
     elif args.reset:
         resetcb()
