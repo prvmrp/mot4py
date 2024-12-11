@@ -2,9 +2,9 @@ import time, struct, usb
 
 class Ztex():
 
-    bufsz = 0x800000
+    bufsz = 0xE000000
     memsz = 0x800000
-    maxcnt = 0x20000
+    maxcnt = 0x100000
     vid = 0x221a
     pid = 0x0100
     tmo = 100
@@ -129,10 +129,10 @@ class Ztex():
             k = 0
             if self.dev:
                 while sz > self.bufsz:
-                    self.dev.write(0x06, self.buf[k:k + sz], 20 * self.tmo)
+                    self.dev.write(0x06, self.buf[k:k + sz], 10 * self.tmo)
                     sz -= self.bufsz
                     k += self.bufsz
-                self.dev.write(0x06, self.buf[k:], self.tmo)
+                self.dev.write(0x06, self.buf[k:], 10 * self.tmo)
             else:
                 self._dump()
 

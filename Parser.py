@@ -252,9 +252,13 @@ class Interpreter(visitors.Interpreter):
                 rd = self.visit(c)
             elif c.data == 'code':
                 code = self.visit(c)
+                fun = None
                 for v in self.fundict.values():
                     if code == v.ID:
                         fun = v
+                        break
+                if fun is None:
+                    raise ValueError('Code (%d) not declared' % (code))
             elif c.data == 'cmd':
                 idle, br = self.visit(c)
         return Action(fun, val, not idle, br, rd, addr)

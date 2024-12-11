@@ -1,4 +1,9 @@
-import sys, signal, tomllib, argparse, os, psutil, tempfile, usb
+import sys, signal, argparse, os, psutil, tempfile, usb
+
+if sys.version_info.minor < 11:
+    import toml
+else:
+    import tomllib
 
 from lark import Lark, visitors
 
@@ -11,8 +16,11 @@ from Functions import *
 from Parser import *
 
 def parseconfig(fname):
-    with open(fname, "rb") as f:
-        config = tomllib.load(f)
+    if sys.version_info.minor < 11:
+        config = toml.load(fname)
+    else:
+        with open(fname, "rb") as f:
+            config = tomllib.load(f)
     #parse Boards
     Boards = {}
     for n, d in config.pop('Board').items():
@@ -140,7 +148,8 @@ def getstatcb():
     else:
         msg = 'Unkown FPGA code'
     if s in ('I', 'E'):
-        timer.stop()
+        if state['gui']:
+            timer.stop()
         state['run'] = False
     if state['gui']:
         update()
@@ -425,10 +434,27 @@ if __name__ == "__main__":
         with open(lockfile, 'w') as f:
             f.write(str(os.getpid()))
 
-            signal.signal(signal.SIGINT, quitcb)
+    signal.signal(signal.SIGINT, quitcb)
             
-    
     Boards, IDdict, IDrev, Fundict = parseconfig('config.toml')
+    #check for overlapping addresses
+    err = False
+    l = [0] * 129
+    for v in Boards.values():
+        if isinstance(v.val, list):
+            for i in range(len(v.val)):
+                l[v.addr + i] += 1
+        else:
+            l[v.addr] += 1
+    for k, i in enumerate(l):
+        if i > 1:
+            print('Conflict: %d boards claim address %d' % (i, k))
+            err = True
+    if err:
+        exit()
+    #check for duplicate codes
+    if len(list(IDdict.values())) > len(set(IDdict.values())):
+        exit('Duplicate IDs defined in config file')
     
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', help='Run directly a mot file without GUI ', dest='fname')
