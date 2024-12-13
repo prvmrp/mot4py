@@ -34,6 +34,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "mot4py.config" = ["*"]
 "mot4py.resources" = ["*"]
+"mot4py.lang" = ["*"]
 
 [tool.pytest.ini_options]
 addopts = [

@@ -1,6 +1,7 @@
 """Parsing and ast generation for mot programming language."""
 
 import time
+from importlib.resources import files
 from pathlib import Path
 
 from lark import Lark, visitors
@@ -11,71 +12,10 @@ from .Functions import *
 class Parser():
     """Class implementing code parsing and ast generation."""
 
-    _grammar = r"""
-    start: loop+
-    loop: _NL* "LOOP" en? _NL+ comment? (init | (inner iterator) | (init inner iterator)) "ENDLOOP" _NL*
-    
-    comment: "COMMENT" _NL+ ctext "ENDCOMMENT" _NL*
-    ctext: (WORD+ WS+)+
-    text: (WORD | WS_INLINE)+
-    init: "INIT" _NL action+ "ENDINIT" _NL*
-    inner: "INNER" _NL+ taction+ "ENDINNER" _NL*
-    taction: time action
-    iterator: "ITERATIONS" INT _NL*
-    
-    time: (abstime | reltime) timeunits
-    reltime: "+" abstime
-    abstime: (DECIMAL|INT)
-    timeunits: (milli|micro|nano)? "s"i
-    milli: "m"
-    micro: "u"
-    nano: "n"
-    
-    action: ( simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
-    cmd: en|br
-    en: "IDLE"i
-    br: "BREAK"i
-    code: INT
-    
-    simple: text
-    
-    binary: text "=" (on | off)
-    on: "1" | "on"i
-    off: "0" | "off"i
-
-    enum: text "=" enumval
-    enumval:  "[" INT "]"
-
-    scalar: text "=" scalarval
-    scalarval: (SIGNED_NUMBER | NUMBER) units
-    units: WORD
-
-    test: text testaddr "=" testval
-    HEXINT: "0x" HEXDIGIT+
-    testaddr: "[" (INT | HEXINT) "]"
-    testval: (INT | HEXINT)
-
-    ramp: (ramplin|ramplog) text "TO" (scalarval|enumval) "IN" time "(" nsteps "STEPS)"
-    ramplin: "RAMP"
-    ramplog: "RAMPLOG"
-    nsteps: INT
-
-    %import common.NEWLINE -> _NL
-    %import common.WORD
-    %import common.INT
-    %import common.HEXDIGIT
-    %import common.DECIMAL
-    %import common.NUMBER
-    %import common.SIGNED_NUMBER
-    %import common.WS_INLINE
-    %import common.WS
-    %import common._STRING_INNER
-
-    %ignore WS_INLINE
-    """
-
     def __init__(self, fname, fundict):
         """TODO"""
+        self._grammar = files("mot4py.lang").joinpath(
+            "motlang.lark").read_text()
         self.parser = Lark(self._grammar, parser="lalr")
         self.fname = fname
         self.fundict = fundict
