@@ -20,7 +20,8 @@ dependencies = [
     "psutil",
     "mkdocs",
     "mkdocstrings",
-    "mkdocstrings-python"
+    "mkdocstrings-python",
+    "pytest"
 ]
 
 [project.gui-scripts]
@@ -32,3 +33,8 @@ where = ["src"]
 [tool.setuptools.package-data]
 "mot4py.config" = ["*"]
 "mot4py.resources" = ["*"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib"
+]
