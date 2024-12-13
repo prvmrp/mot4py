@@ -8,6 +8,8 @@ build==1.2.2.post1
     # via
     #   mot4py (pyproject.toml)
     #   pip-tools
+cfgv==3.4.0
+    # via pre-commit
 click==8.1.7
     # via
     #   mkdocs
@@ -15,10 +17,16 @@ click==8.1.7
     #   pip-tools
 colorama==0.4.6
     # via griffe
+distlib==0.3.9
+    # via virtualenv
+filelock==3.16.1
+    # via virtualenv
 ghp-import==2.1.0
     # via mkdocs
 griffe==1.5.1
     # via mkdocstrings-python
+identify==2.6.3
+    # via pre-commit
 iniconfig==2.0.0
     # via pytest
 jinja2==3.1.4
@@ -60,6 +68,8 @@ mkdocstrings==0.27.0
     #   mot4py (pyproject.toml)
 mkdocstrings-python==1.12.2
     # via mot4py (pyproject.toml)
+nodeenv==1.9.1
+    # via pre-commit
 packaging==24.2
     # via
     #   build
@@ -73,8 +83,11 @@ platformdirs==4.3.6
     # via
     #   mkdocs-get-deps
     #   mkdocstrings
+    #   virtualenv
 pluggy==1.5.0
     # via pytest
+pre-commit==4.0.1
+    # via mot4py (pyproject.toml)
 psutil==6.1.0
     # via mot4py (pyproject.toml)
 pymdown-extensions==10.12
@@ -99,12 +112,15 @@ pyyaml==6.0.2
     # via
     #   mkdocs
     #   mkdocs-get-deps
+    #   pre-commit
     #   pymdown-extensions
     #   pyyaml-env-tag
 pyyaml-env-tag==0.1
     # via mkdocs
 six==1.17.0
     # via python-dateutil
+virtualenv==20.28.0
+    # via pre-commit
 watchdog==6.0.0
     # via mkdocs
 wheel==0.45.1

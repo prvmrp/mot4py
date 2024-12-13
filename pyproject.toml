@@ -21,7 +21,8 @@ dependencies = [
     "mkdocs",
     "mkdocstrings",
     "mkdocstrings-python",
-    "pytest"
+    "pytest",
+    "pre-commit"
 ]
 
 [project.gui-scripts]
