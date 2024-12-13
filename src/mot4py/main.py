@@ -1,4 +1,5 @@
 import sys, signal, argparse, os, psutil, tempfile, usb
+from importlib.resources import files
 
 if sys.version_info.minor < 11:
     import toml
@@ -10,10 +11,10 @@ from lark import Lark, visitors
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtRemoveInputHook        
 
-from SPBBoards import SPBBrd
-from Ztex import Ztex
-from Functions import *
-from Parser import *
+from .SPBBoards import SPBBrd
+from .Ztex import Ztex
+from .Functions import *
+from .Parser import *
 
 def parseconfig(fname):
     if sys.version_info.minor < 11:
@@ -417,8 +418,8 @@ class TestWin(QtWidgets.QWidget):
             self.stacktest.setval(0)
         self.Stack.setCurrentIndex(val)        
         
-if __name__ == "__main__":
 
+def main():
     global lockfile, prog, state, fpga
     state = {'gui':False, 'prog':None, 'run':False}
 
@@ -436,7 +437,8 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, quitcb)
             
-    Boards, IDdict, IDrev, Fundict = parseconfig('config.toml')
+    config_file = files("mot4py.config").joinpath("config.toml")
+    Boards, IDdict, IDrev, Fundict = parseconfig(config_file)
     #check for overlapping addresses
     err = False
     l = [0] * 129
@@ -500,7 +502,8 @@ if __name__ == "__main__":
         timer.timeout.connect(getstatcb)
 
         # load the ui configuration files
-        mainwin = uic.loadUi('mot4qt.ui')
+        ui_file = files("mot4py.resources").joinpath("mot4qt.ui")
+        mainwin = uic.loadUi(ui_file)
         w = mainwin.horizontalLayout.sizeHint().width() + 2
         h = mainwin.horizontalLayout.sizeHint().height() + mainwin.menubar.sizeHint().height() + mainwin.statusbar.sizeHint().height() + 2
         mainwin.setFixedSize(QtCore.QSize(w, h))
@@ -552,3 +555,6 @@ if __name__ == "__main__":
         
         # start the app
         app.exec()
+
+if __name__ == "__main__":
+    main()

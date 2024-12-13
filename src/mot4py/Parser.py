@@ -1,7 +1,10 @@
 import time
-from lark import Lark, visitors
-from Functions import *
 from pathlib import Path
+
+from lark import Lark, visitors
+
+from .Functions import *
+
 
 class Parser():
 
@@ -71,14 +74,14 @@ class Parser():
     def __init__(self, fname, fundict):
         self.parser = Lark(self._grammar, parser="lalr")
         self.fname = fname
-        self.fundict = fundict        
+        self.fundict = fundict
         self.tree = self.parser.parse(open(fname).read())
         self.loops = []
         self._parse()
         self.compiled = []
         self._compile()
         self.len = self._calc_len()
-        
+
     def _parse(self):
         for l in self.tree.children:
             self.loops.append(Interpreter(self.fundict).visit(l))
@@ -86,7 +89,7 @@ class Parser():
     def _compile(self):
         for l in self.loops:
             self.compiled.append(l.compile())
-        
+
     def _calc_len(self):
         sum = 0
         for l in self.compiled:
@@ -98,8 +101,8 @@ class Parser():
                 sum += len(l)
             else:
                 sum += i + (len(l) - i - 1) * l[-1].get('iter')
-        return sum 
-            
+        return sum
+
     def format(self):
         ans = ''
         for l in self.loops:
@@ -125,7 +128,7 @@ class Parser():
                                 else:
                                     tests.append(a.addr)
                                     acts.append(a)
-                            else:    
+                            else:
                                 if a.fun.ID in ids:
                                     continue
                                 else:
@@ -165,22 +168,23 @@ class Parser():
                         if a.get('first'):
                             start = k
                         if a.get('iter'):
-                            stop = k;
+                            stop = k
                             break
                         k += 1
-                        
+
                     for a in l[start:stop]:
                         if a.get('en') and not a.get('nop'):
                             f.write("#%d\n" % (a['abst']))
                             f.write(a['fun']._dvarVCD(a['val'], a['addr']))
             i += 1
-        
+
+
 class Interpreter(visitors.Interpreter):
 
     def __init__(self, fundict):
         super().__init__()
         self.fundict = fundict
-    
+
     def loop(self, tree):
         en = True
         cmt = None
@@ -199,7 +203,7 @@ class Interpreter(visitors.Interpreter):
             elif c.data == 'iterator':
                 it = self.visit(c)
         return Loop(cmt, init, inner, it, en)
-                
+
     def _concat(self, tree):
         ans = ''
         for c in tree.children:
@@ -207,10 +211,10 @@ class Interpreter(visitors.Interpreter):
             if c.value != '\n':
                 ans += ' '
         return ans[:-1]
-                
+
     def ctext(self, tree):
         return self._concat(tree)
-                
+
     def text(self, tree):
         return self._concat(tree)
 
@@ -227,7 +231,7 @@ class Interpreter(visitors.Interpreter):
                 for d in c.children:
                     t = float(d)
             elif c.data == 'timeunits':
-                mult  = 1000000000
+                mult = 1000000000
                 for d in c.children:
                     if d.data == 'milli':
                         mult = 1000000
@@ -236,7 +240,7 @@ class Interpreter(visitors.Interpreter):
                     elif d.data == 'nano':
                         mult = 1
         return (rel, int(t * mult))
-                        
+
     def action(self, tree):
         idle = False
         br = False
@@ -270,7 +274,7 @@ class Interpreter(visitors.Interpreter):
             elif c.data == 'action':
                 a = self.visit(c)
         return TimedAction(rel, t, a)
-    
+
     def simple(self, tree):
         return None
 
@@ -297,15 +301,15 @@ class Interpreter(visitors.Interpreter):
     def test(self, tree):
         for c in tree.children:
             if c.data == 'testval':
-                for d in c.children:                    
+                for d in c.children:
                     s = d.value
                     val = int(s, 16) if s.startswith('0x') else int(s)
             elif c.data == 'testaddr':
-                for d in c.children:                    
+                for d in c.children:
                     s = d.value
                     addr = int(s, 16) if s.startswith('0x') else int(s)
         return addr, val
-                    
+
     def ramp(self, tree):
         rd = {}
         for c in tree.children:
@@ -332,7 +336,7 @@ class Interpreter(visitors.Interpreter):
                     if isinstance(d, str):
                         rd['steps'] = int(d)
         return rd
-                    
+
     def code(self, tree):
         for c in tree.children:
             if isinstance(c, str):
@@ -347,8 +351,8 @@ class Interpreter(visitors.Interpreter):
             if c.data == 'br':
                 br = True
         return (en, br)
-    
-    def iterator(self,tree):
+
+    def iterator(self, tree):
         for c in tree.children:
             if isinstance(c, str):
                 return int(c)
