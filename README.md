@@ -53,25 +53,42 @@ After downloading the project from github, you will need to:
     pip install setuptools pip-tools 
     ```
 
-1. Install runtime libraries.
-
-    Runtime libraries and packages are those needed for the execution of
-    the program (not the development).
-
-    From inside the project directory, run:
+1. Install all runtime and development dependencies:
+    From inside the project library, run:
     ```bash
-    pip-sync
+    make
     ```
+    And everything should be installed. If this does not work, and/or
+    you do not have make installed, try the following:
 
-1. Make an editable install of the package.
+    1. Install runtime libraries.
 
-    In this way, you will install the package from the working
-    directory, and you will be able to see the changes in real time.
+        Runtime libraries and packages are those needed for the execution of
+        the program (not the development).
 
-    From inside the project directory, run:
-    ```bash
-    pip install -e .
-    ```
+        From inside the project directory, run:
+        ```bash
+        pip-sync
+        ```
+
+    1. Make an editable install of the package.
+
+        In this way, you will install the package from the working
+        directory, and you will be able to see the changes in real time.
+
+        From inside the project directory, run:
+        ```bash
+        pip install -e .
+        ```
+
+    1. Install the pre-commit hooks.
+        This is done so that the code is automatically formatted on
+        commit according to python standards (PEP8).
+
+        From inside the project directory, run:
+        ```bash
+        pre-commit install
+        ```
 
 1. Check that everything is good.
     
