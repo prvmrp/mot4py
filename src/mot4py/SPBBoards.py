@@ -27,13 +27,13 @@ class SPBBrd():
 
     def get_addr(self, ch):
         return self.addr
-        
+
     def get_val(self, ch=None):
         if ch is None:
             return self.val
         else:
             return self.val[ch]
-            
+
     def set_val(self, nv, ch):
         if ch is None:
             self.val = nv
@@ -44,22 +44,22 @@ class SPBBrd():
         return val
 
     def _dac_param2val(self, val):
-        if(val <= self._vmin):
+        if (val <= self._vmin):
             n = 0x8000
         elif val >= self._vmax:
             n = 0x7fff
         else:
             n = round((val - self._vmin) / (self._vmax - self._vmin) * 0x8000)
         return n
-    
+
     def _lut_param2val(self, val):
-        if(val <= self._lutmax):
+        if (val <= self._lutmax):
             return val
         else:
             raise ValueError('Invalid LUT index')
-            
+
     def _lin_param2val(self, val, ch):
-        #amp or freq
+        # amp or freq
         if ch[0] == 'A':
             return min(val, self._amax)
         else:
@@ -75,30 +75,32 @@ class SPBBrd():
 
     def conn2str(self, ch):
         return ("Brd %s" % (self.name))
-    
+
     def _lin_conn2str(self, ch):
         return ("Brd %s: Ch. %d" % (self.name, int(ch[1:])))
-    
+
     def _ch_conn2str(self, ch):
         return ("Brd %s: Ch. %d" % (self.name, int(ch)))
-        
-    def _getopt(self, d, opt, default):        
+
+    def _getopt(self, d, opt, default):
         return d.get('opts').get(opt, default) if d.get('opts') else default
 
     @classmethod
     def genbrd(self, name, d):
-        t = d.get('type') 
+        t = d.get('type')
         if t not in self._brdtype:
             raise ValueError('Unknown board type: ' + name)
         else:
-            for b in self._brdtype: 
+            for b in self._brdtype:
                 if t == b:
                     return eval(b + '(name, d)')
+
 
 class Test(SPBBrd):
     def __init__(self, name, d):
         super().__init__(name, d)
         self.ch = 0
+
 
 class DO16(SPBBrd):
 
@@ -123,30 +125,32 @@ class DO16(SPBBrd):
     def conn2str(self, ch):
         return ("Brd %s: D%d" % (self.name, int(ch)))
 
+
 class AO1(SPBBrd):
-    
+
     _vmin = -10.
     _vmax = 10.
-    
+
     def __init__(name, d):
         super().__init__(name, d)
-        self._vmin = self._getopt(d, 'vmin', AO1._vmin) 
-        self._vmax = self._getopt(d, 'vmax', AO1._vmax) 
+        self._vmin = self._getopt(d, 'vmin', AO1._vmin)
+        self._vmax = self._getopt(d, 'vmax', AO1._vmax)
 
     def param2val(self, val, ch):
         return self._dac_param2val(val)
 
+
 class AO4(SPBBrd):
-    
+
     _vmin = -10.
     _vmax = 10.
-    _lutmax = 2047 
-    
+    _lutmax = 2047
+
     def __init__(self, name, d):
         super().__init__(name, d)
-        self._vmin = self._getopt(d, 'vmin', AO4._vmin) 
+        self._vmin = self._getopt(d, 'vmin', AO4._vmin)
         self._vmax = self._getopt(d, 'vmax', AO4._vmax)
-        self._lutmax = AO4._lutmax 
+        self._lutmax = AO4._lutmax
 
     def param2val(self, val, ch):
         return self._lut_param2val(val)
@@ -154,17 +158,18 @@ class AO4(SPBBrd):
     def conn2str(self, ch):
         return self._ch_conn2str(ch)
 
+
 class AO8(SPBBrd):
-    
+
     _vmin = -12.
     _vmax = 12.
-    
+
     def __init__(self, name, d):
         super().__init__(name, d)
         self.val = [0] * 8
-        self._vmin = self._getopt(d, 'vmin', AO8._vmin) 
+        self._vmin = self._getopt(d, 'vmin', AO8._vmin)
         self._vmax = self._getopt(d, 'vmax', AO8._vmax)
-        
+
     def get_addr(self, ch):
         return self.addr + int(ch)
 
@@ -173,17 +178,18 @@ class AO8(SPBBrd):
 
     def set_val(self, nv, ch):
         super().set_val(nv, int(ch))
-    
+
     def param2val(self, val, ch):
         return self._dac_param2val(val)
 
     def conn2str(self, ch):
         return self._ch_conn2str(ch)
 
+
 class RF9958(SPBBrd):
-    
+
     _lutmax = 1023
-        
+
     def __init__(self, name, d):
         super().__init__(name, d)
         self._lutmax = RF9958._lutmax
@@ -194,60 +200,64 @@ class RF9958(SPBBrd):
     def conn2str(self, ch):
         return self._ch_conn2str(ch)
 
+
 class RF9959(SPBBrd):
-    
+
     _lutmax = 511
-        
+
     def __init__(self, name, d):
         super().__init__(name, d)
-        self._lutmax = RF9959._lutmax 
+        self._lutmax = RF9959._lutmax
 
     def param2val(self, val, ch):
         return self._lut_param2val(val)
 
     def conn2str(self, ch):
         return self._ch_conn2str(ch)
+
 
 class RF9958F(SPBBrd):
-    
+
     _lutmax = 511
-    
+
     def __init__(self, name, d):
         super().__init__(name, d)
-        self._lutmax = RF9958F._lutmax 
-        
+        self._lutmax = RF9958F._lutmax
+
     def param2val(self, val, ch):
         return self._lut_param2val(val)
 
     def conn2str(self, ch):
         return self._ch_conn2str(ch)
 
+
 class RF9912(SPBBrd):
-    
+
     _lutmax = 2047
-    
+
     def __init__(self, name, d):
         super().__init__(name, d)
-        self._lutmax = RF9912._lutma<x 
+        self._lutmax = RF9912._lutma < x
 
     def param2val(self, val, ch):
         return self._lut_param2val(val)
 
+
 class RF9912LIN(SPBBrd):
-    
+
     _A = 150e6
     _B = 1e3
-    _ch2ofs = {'F':0, 'A':1}
+    _ch2ofs = {'F': 0, 'A': 1}
     _amax = 255
     _lutmax = 65536
-    
+
     def __init__(self, name, d):
         super().__init__(name, d)
         self.val = [0] * 2
-        self.A = self._getopt(d, 'A', RF9912LIN._A) 
-        self.B = self._getopt(d, 'B', RF9912LIN._B) 
+        self.A = self._getopt(d, 'A', RF9912LIN._A)
+        self.B = self._getopt(d, 'B', RF9912LIN._B)
         self._amax = RF9912LIN._amax
-        
+
     def get_addr(self, ch):
         return self.addr + RF9912LIN._ch2ofs.get(ch, 0)
 
@@ -256,18 +266,19 @@ class RF9912LIN(SPBBrd):
 
     def set_val(self, nv, ch):
         super().set_val(nv, RF9912LIN._ch2ofs.get(ch, 0))
-        
+
     def param2val(self, val, ch):
         return self._lin_param2val(val, ch)
 
+
 class RF9958LIN(SPBBrd):
-            
+
     _A = 60e6
     _B = 1e3
-    _ch2ofs = {'F0':0, 'A0':1, 'F1':2, 'A1':3}
+    _ch2ofs = {'F0': 0, 'A0': 1, 'F1': 2, 'A1': 3}
     _amax = 1024
     _lutmax = 65536
-        
+
     def __init__(self, name, d):
         super().__init__(name, d)
         self.val = [0] * 4

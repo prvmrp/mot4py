@@ -1,0 +1,8 @@
+site_name: "MOT4Py"
+
+theme:
+  name: "readthedocs"
+
+plugins:
+- search
+- mkdocstrings

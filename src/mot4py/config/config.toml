@@ -12,7 +12,7 @@ opts = {vmin = -12.228, vmax = 12.228}
 [Board.AO2]
 desc = "Analog Output Board #1"
 type = "AO8"
-address = 12
+address = 16
 opts = {vmin = -12.228, vmax = 12.228}
 
 

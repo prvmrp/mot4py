@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mot4py"
+dynamic = ["version"]
+authors = [
+    {name = "Marco Prevedelli", email = "marco.prevedelli@unibo.it"}
+]
+description = "Control system for atomic physics experiments"
+requires-python = ">= 3.11"
+readme = "README.md"
+dependencies = [
+    "lark",
+    "pyqt5",
+    "pyusb",
+    "pip-tools",
+    "build",
+    "psutil",
+    "mkdocs",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "pytest",
+    "pre-commit",
+]
+
+[project.gui-scripts]
+mot4py = "mot4py.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"mot4py.config" = ["*"]
+"mot4py.resources" = ["*"]
+"mot4py.lang" = ["*"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib"
+]
