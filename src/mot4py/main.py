@@ -1,11 +1,12 @@
-import sys
-import signal
 import argparse
 import os
-import psutil
+import signal
+import sys
 import tempfile
-import usb
 from importlib.resources import files
+
+import psutil
+import usb
 
 if sys.version_info.minor < 11:
     import toml
@@ -13,14 +14,13 @@ else:
     import tomllib
 
 from lark import Lark, visitors
-
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtRemoveInputHook
 
-from .SPBBoards import SPBBrd
-from .Ztex import Ztex
 from .Functions import *
 from .Parser import *
+from .SPBBoards import SPBBrd
+from .Ztex import Ztex
 
 mainwin = None
 testwin = None

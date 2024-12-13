@@ -1,5 +1,6 @@
-import time
 import struct
+import time
+
 import usb
 
 
