@@ -16,6 +16,9 @@ from .Ztex import Ztex
 from .Functions import *
 from .Parser import *
 
+mainwin = None
+testwin = None
+
 def parseconfig(fname):
     if sys.version_info.minor < 11:
         config = toml.load(fname)
@@ -420,7 +423,7 @@ class TestWin(QtWidgets.QWidget):
         
 
 def main():
-    global lockfile, prog, state, fpga
+    global lockfile, prog, state, fpga, mainwin, testwin
     state = {'gui':False, 'prog':None, 'run':False}
 
     #find if another instance is running
@@ -502,7 +505,7 @@ def main():
         timer.timeout.connect(getstatcb)
 
         # load the ui configuration files
-        ui_file = files("mot4py.resources").joinpath("mot4qt.ui")
+        ui_file = str(files("mot4py.resources").joinpath("mot4qt.ui"))
         mainwin = uic.loadUi(ui_file)
         w = mainwin.horizontalLayout.sizeHint().width() + 2
         h = mainwin.horizontalLayout.sizeHint().height() + mainwin.menubar.sizeHint().height() + mainwin.statusbar.sizeHint().height() + 2
