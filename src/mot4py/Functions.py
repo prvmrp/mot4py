@@ -1,12 +1,14 @@
-import SPBBoards
+from . import SPBBoards
+
 
 def cAO1_2(val):
     return 0.5 * val
 
+
 class Function():
 
     _funtype = ('Simple', 'Binary', 'Enum', 'Scalar', 'Test')
-    
+
     def __init__(self, n, id, d, brds):
         self.name = n
         self.ID = id
@@ -18,30 +20,32 @@ class Function():
         self.min = d.get('min')
         brd, self.ch = n.split('_')
         self.brd = brds.get(brd)
-        
+
     def val2hex(self, val, board=None):
         return val
-    
+
     @classmethod
     def genfun(self, name, id, d, brds):
-        t = d.get('type') 
+        t = d.get('type')
         if t not in self._funtype:
             raise ValueError('Unknown function type: ' + name)
             return
         else:
-            for b in self._funtype: 
+            for b in self._funtype:
                 if t == b:
                     return eval(b + '(name, id, d, brds)')
 
     def format(self):
         return self.desc
 
+
 class Simple(Function):
 
     def __init__(self, n, id, d, brds):
         super().__init__(n, id, d, brds)
         if self.comp is None:
-            raise ValueError("The Simple function %s requires a compile field" % (self.desc))
+            raise ValueError(
+                "The Simple function %s requires a compile field" % (self.desc))
             return
 
     def val2hex(self, val):
@@ -51,12 +55,13 @@ class Simple(Function):
         return str.ljust(super().format(), 60)
 
     def _regVCD(self):
-        name = self.desc.replace(' ','_').replace('.','_')
+        name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var wire 1 %d %s $end\n" % (self.ID, name)
 
     def _dvarVCD(self, val, addr):
         return "1%d\n" % (self.ID)
-    
+
+
 class Binary(Function):
 
     def val2hex(self, val):
@@ -69,11 +74,12 @@ class Binary(Function):
         return str.ljust(ans, 60)
 
     def _regVCD(self):
-        name = self.desc.replace(' ','_').replace('.','_')
+        name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var reg 1 %d %s $end\n" % (self.ID, name)
 
     def _dvarVCD(self, val, addr):
         return "%d%d\n" % (1 if val else 0, self.ID)
+
 
 class Enum(Function):
 
@@ -82,14 +88,15 @@ class Enum(Function):
             self.brd.set_val(val, self.ch)
             return val
         else:
-            raise ValueError('Invalid state %d for function %s' % (val, self.desc))
+            raise ValueError('Invalid state %d for function %s' %
+                             (val, self.desc))
 
     def format(self, val, addr):
         ans = super().format() + (" = [%d]" % (val))
         return str.ljust(ans, 60)
 
     def _regVCD(self):
-        name = self.desc.replace(' ','_').replace('.','_')
+        name = self.desc.replace(' ', '_').replace('.', '_')
         if self.max:
             j = self.max.bit_length()
         else:
@@ -99,6 +106,7 @@ class Enum(Function):
     def _dvarVCD(self, val, addr):
         return "%s %d\n" % (bin(val)[1:], self.ID)
 
+
 class Scalar(Function):
 
     def __init__(self, n, id, d, brds):
@@ -107,7 +115,7 @@ class Scalar(Function):
             self.fmt = "%.3f%"
         if not self.units:
             self.units = "A.U.%"
-            
+
     def val2hex(self, val):
         if self.comp:
             v1 = eval(self.comp + ('(%f)' % (val)))
@@ -124,11 +132,12 @@ class Scalar(Function):
         return str.ljust(ans, 60)
 
     def _regVCD(self):
-        name = self.desc.replace(' ','_').replace('.','_')
-        return "$var real 64 %d %s $end\n" % (self.ID, name);
+        name = self.desc.replace(' ', '_').replace('.', '_')
+        return "$var real 64 %d %s $end\n" % (self.ID, name)
 
     def _dvarVCD(self, val, addr):
-        return "r%.16g %d\n" % (val, self.ID);
+        return "r%.16g %d\n" % (val, self.ID)
+
 
 class Test(Function):
 
@@ -141,12 +150,13 @@ class Test(Function):
         return str.ljust(ans, 60)
 
     def _regVCD(self, addr):
-        name = self.desc.replace(' ','_').replace('.','_')
+        name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var reg 16 A%d ADDR_%d [15:0] $end\n" % (addr, addr)
-    
+
     def _dvarVCD(self, val, addr):
         return "%s A%d\n" % (bin(val)[1:], addr)
-        
+
+
 class Action():
 
     def __init__(self, fun, val, en=False, br=False, ramp={}, addr=None):
@@ -155,7 +165,8 @@ class Action():
         self.en = en
         self.br = br
         self.ramp = ramp
-        self.addr = addr if addr is not None else self.fun.brd.get_addr(self.fun.ch)
+        self.addr = addr if addr is not None else self.fun.brd.get_addr(
+            self.fun.ch)
 
     def format(self, sz):
         if self.ramp:
@@ -165,8 +176,10 @@ class Action():
                 ans = "RAMPLOG "
             else:
                 ans = "RAMP "
-            ans += self.fun.format(self.ramp['end'], None).rstrip().replace('=', 'TO', 1)
-            ans += " IN %s " % (TimedAction.timefmt(None, False, self.ramp['time']))
+            ans += self.fun.format(self.ramp['end'],
+                                   None).rstrip().replace('=', 'TO', 1)
+            ans += " IN %s " % (TimedAction.timefmt(None,
+                                False, self.ramp['time']))
             ans += "(%d STEPS) " % self.ramp['steps']
             if len(ans) < sz:
                 ans = str.ljust(ans, sz)
@@ -199,32 +212,33 @@ class Action():
                 self.val = v0 * (dv ** i)
             else:
                 self.val = v0 + dv * i
-            l.append({'abst':atime, 'val':self.val})
+            l.append({'abst': atime, 'val': self.val})
             atime += dt
         return l
 
-    
-    def compile(self, cval, atime=0):        
+    def compile(self, cval, atime=0):
         db = isinstance(self.fun.brd, SPBBoards.DO16)
-        aux = {'addr':self.addr, 'en':self.en, 'br':self.br, 'db':db, 'fun':self.fun}
+        aux = {'addr': self.addr, 'en': self.en,
+               'br': self.br, 'db': db, 'fun': self.fun}
         if not self.ramp:
             hexval = self.fun.val2hex(self.val)
-            return [{'abst':atime, 'val':self.val, 'bin':hexval} | aux,]
+            return [{'abst': atime, 'val': self.val, 'bin': hexval} | aux,]
         else:
-            self.val = cval['ids'][self.fun.ID] #no ramps for Test Actions
+            self.val = cval['ids'][self.fun.ID]  # no ramps for Test Actions
             l = self._unramp(atime)
             for e in l:
                 hexval = self.fun.val2hex(e['val'])
-                e |= {'bin':hexval} | aux
+                e |= {'bin': hexval} | aux
             cval['ids'][self.fun.ID] = l[-1]['val']
             return l
-        
+
+
 class TimedAction():
     def __init__(self, rel, time, act):
         self.rel = rel
         self.time = time
         self.action = act
-        
+
     def format(self, sz):
         ts = self.timefmt(self.rel, self.time)
         return str.ljust(ts, 15) + self.action.format(sz - 15)
@@ -250,11 +264,12 @@ class TimedAction():
         else:
             atime = self.time
         return self.action.compile(cval, atime)
-            
+
+
 class Loop():
     _minDT = 100
-    _maxDT = 6840000000000  
-    
+    _maxDT = 6840000000000
+
     def __init__(self, cmt, init, inner, it, en):
         self.cmt = cmt
         self.init = init
@@ -285,7 +300,7 @@ class Loop():
 
     def compile(self):
         looplist = []
-        cval = {'ids':{}, 'addrs':{}}
+        cval = {'ids': {}, 'addrs': {}}
         if self.en:
             atime = self._minDT
             for a in self.init:
@@ -301,7 +316,7 @@ class Loop():
             for a in self.inner:
                 if a.action.en:
                     l = a.compile(cval, atime)
-                    if isinstance(a.action.fun, Test):                        
+                    if isinstance(a.action.fun, Test):
                         cval['addrs'][a.action.addr] = a.action.val
                     else:
                         cval['ids'][a.action.fun.ID] = a.action.val
@@ -313,7 +328,7 @@ class Loop():
                 ln.sort(key=lambda v: v['abst'])
                 if self.it > 1:
                     ln[0]['first'] = True
-                    ln.append({'iter':self.it})
+                    ln.append({'iter': self.it})
             looplist.extend(ln)
 
             looplist[0]['relt'] = looplist[0].get('abst') // 100
@@ -326,22 +341,24 @@ class Loop():
                     if looplist[i].get('first'):
                         dt = looplist[i].get('abst')
                     else:
-                        dt = looplist[i].get('abst') - looplist[i - 1].get('abst')
+                        dt = looplist[i].get('abst') - \
+                            looplist[i - 1].get('abst')
                     if 0 < dt < self._minDT:
                         raise ValueError('DT too small: %d ns ' % (dt))
                     elif dt == 0:
                         if (looplist[i]['addr'] == looplist[i - 1]['addr']) and looplist[i]['db'] and looplist[i - 1]['db']:
                             looplist[i]['first'] = looplist[i - 1].get('first')
-                            looplist[i]['relt'] = looplist[i - 1].get('relt') 
+                            looplist[i]['relt'] = looplist[i - 1].get('relt')
                             looplist.pop(i - 1)
                             i -= 1
                             n -= 1
                         else:
-                            raise ValueError('Two actions at the same time: %d ns ' % (looplist[i].get('abst')))
+                            raise ValueError('Two actions at the same time: %d ns ' % (
+                                looplist[i].get('abst')))
                     elif dt > self._maxDT:
                         mt = self._maxDT // 100
                         p = dt // self._maxDT
-                        d = [{'nop':True, 'relt':mt}] * p
+                        d = [{'nop': True, 'relt': mt}] * p
                         looplist[i]['relt'] = (dt % self._maxDT) // 100
                         looplist = looplist[:i] + d + looplist[i:]
                         i += p - 1
@@ -350,6 +367,7 @@ class Loop():
                         looplist[i]['relt'] = dt // 100
                     i += 1
                 else:
-                    looplist[i + 1]['relt'] = looplist[i + 1].get('abst') // 100
+                    looplist[i + 1]['relt'] = looplist[i +
+                                                       1].get('abst') // 100
                     i += 2
-        return looplist        
+        return looplist
