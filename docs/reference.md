@@ -10,3 +10,4 @@ grammar which is defined in the Parser class.
 ::: mot4py.parser
     options:
         show_source: false
+        show_root_heading: true
