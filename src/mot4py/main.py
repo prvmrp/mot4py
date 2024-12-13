@@ -18,7 +18,7 @@ from PyQt5 import Qt, QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtRemoveInputHook
 
 from .Functions import *
-from .Parser import *
+from .parser import *
 from .SPBBoards import SPBBrd
 from .Ztex import Ztex
 

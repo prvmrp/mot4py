@@ -1,3 +1,5 @@
+"""Parsing and ast generation for mot programming language."""
+
 import time
 from pathlib import Path
 
@@ -7,6 +9,7 @@ from .Functions import *
 
 
 class Parser():
+    """Class implementing code parsing and ast generation."""
 
     _grammar = r"""
     start: loop+
@@ -72,6 +75,7 @@ class Parser():
     """
 
     def __init__(self, fname, fundict):
+        """TODO"""
         self.parser = Lark(self._grammar, parser="lalr")
         self.fname = fname
         self.fundict = fundict
@@ -104,12 +108,14 @@ class Parser():
         return sum
 
     def format(self):
+        """TODO"""
         ans = ''
         for l in self.loops:
             ans += l.format()
         return ans
 
     def wrVCD(self):
+        """TODO"""
         i = 0
         for l in self.loops:
             if l.en:
@@ -180,12 +186,15 @@ class Parser():
 
 
 class Interpreter(visitors.Interpreter):
+    """TODO"""
 
     def __init__(self, fundict):
+        """TODO"""
         super().__init__()
         self.fundict = fundict
 
     def loop(self, tree):
+        """TODO"""
         en = True
         cmt = None
         init = []
@@ -213,12 +222,15 @@ class Interpreter(visitors.Interpreter):
         return ans[:-1]
 
     def ctext(self, tree):
+        """TODO"""
         return self._concat(tree)
 
     def text(self, tree):
+        """TODO"""
         return self._concat(tree)
 
     def time(self, tree):
+        """TODO"""
         rel = False
         for c in tree.children:
             if c.data == 'reltime':
@@ -242,6 +254,7 @@ class Interpreter(visitors.Interpreter):
         return (rel, int(t * mult))
 
     def action(self, tree):
+        """TODO"""
         idle = False
         br = False
         rd = {}
@@ -268,6 +281,7 @@ class Interpreter(visitors.Interpreter):
         return Action(fun, val, not idle, br, rd, addr)
 
     def taction(self, tree):
+        """TODO"""
         for c in tree.children:
             if c.data == 'time':
                 rel, t = self.visit(c)
@@ -276,9 +290,11 @@ class Interpreter(visitors.Interpreter):
         return TimedAction(rel, t, a)
 
     def simple(self, tree):
+        """TODO"""
         return None
 
     def binary(self, tree):
+        """TODO"""
         for c in tree.children:
             if c.data == 'on':
                 return True
@@ -286,12 +302,14 @@ class Interpreter(visitors.Interpreter):
                 return False
 
     def enum(self, tree):
+        """TODO"""
         for c in tree.children:
             if c.data == 'enumval':
                 for d in c.children:
                     return int(d)
 
     def scalar(self, tree):
+        """TODO"""
         for c in tree.children:
             if c.data == 'scalarval':
                 for d in c.children:
@@ -299,6 +317,7 @@ class Interpreter(visitors.Interpreter):
                         return float(d)
 
     def test(self, tree):
+        """TODO"""
         for c in tree.children:
             if c.data == 'testval':
                 for d in c.children:
@@ -311,6 +330,7 @@ class Interpreter(visitors.Interpreter):
         return addr, val
 
     def ramp(self, tree):
+        """TODO"""
         rd = {}
         for c in tree.children:
             if c.data == 'ramplin':
@@ -338,11 +358,13 @@ class Interpreter(visitors.Interpreter):
         return rd
 
     def code(self, tree):
+        """TODO"""
         for c in tree.children:
             if isinstance(c, str):
                 return int(c)
 
     def cmd(self, tree):
+        """TODO"""
         en = False
         br = False
         for c in tree.children:
@@ -353,6 +375,7 @@ class Interpreter(visitors.Interpreter):
         return (en, br)
 
     def iterator(self, tree):
+        """TODO"""
         for c in tree.children:
             if isinstance(c, str):
                 return int(c)
