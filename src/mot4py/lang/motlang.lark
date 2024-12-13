@@ -1,60 +1,140 @@
+// Motlang formal grammar
+// Version: unstable
+
+%import common.NEWLINE -> _NL
+%import common.WORD
+// Positive integer number
+%import common.INT
+// String of digits and/or letters a-f (case insensitive). Note: 0x not included
+%import common.HEXDIGIT
+// Positive decimal
+%import common.DECIMAL
+// Positive float or decimal
+%import common.NUMBER
+// Number with mandatory sign specifier
+%import common.SIGNED_NUMBER
+// Tabs and spaces
+%import common.WS_INLINE
+// All whitespace
+%import common.WS
+// The inner part of a string (what would normally go inside the "")
+%import common._STRING_INNER
+
+// All inline whitespace is ignored during lexing.
+// As per lark documentation, this is very important, because a LALR(1) parser
+// needs to have all extraneous elements excluded for optimal performance.
+%ignore WS_INLINE
+
+// The start rule is the entrypoint for lark
+// A program is composed of one or more loops
 start: loop+
+
+// A loop starts with the keyword LOOP and ends with the keyword ENDLOOP.
+// On the same line of the LOOP keyword, there can be one IDLE command.
+// The body of the loop is formed by one optional init section (to be performed
+// once upon the first execution of the loop) and one iterating section. The
+// iterating section is composed of an inner loop, containing the instructions
+// to be executed, and an iterator, to track the number of iterations to be
+// performed.
 loop: _NL* "LOOP" en? _NL+ comment? (init | (inner iterator) | (init inner iterator)) "ENDLOOP" _NL*
 
+// A comment starts with the word COMMENT and ends with the word ENDCOMMENT
+// It can contain any text or number of newlines
 comment: "COMMENT" _NL+ ctext "ENDCOMMENT" _NL*
+
+// Comment string, can span any number of lines
 ctext: (WORD+ WS+)+
+
+// Simple string, can span only one line
 text: (WORD | WS_INLINE)+
+
+// The init section starts with the keyword INIT, followed by exactly one
+// newline, and ends with the keyword ENDINIT. It must contain at least one
+// action.
+// TODO: why only one newline?
 init: "INIT" _NL action+ "ENDINIT" _NL*
+
+// The inner sections starts with the keyword INNER and ends with the keyword
+// ENDINNER. It must contain at least one timed action.
 inner: "INNER" _NL+ taction+ "ENDINNER" _NL*
+
+// Timed action, formed by a time specification and then an action
 taction: time action
+
+// Iterator construct, composed of the ITERATIONS keyword and an unsigned integer
 iterator: "ITERATIONS" INT _NL*
 
+// A time specification is composed of a time amount, which can be either
+// relative or absolute, and an unit
 time: (abstime | reltime) timeunits
+
+// A relative time amount is an absolute time amount, preceded by a plus.
+// TODO: from which time should reltime count? From the previous action?
 reltime: "+" abstime
+
+// An absolute time amount can be either a positive decimal number or an unsigned
+// integer.
+// TODO: from which time does the absolute time count? Beginning of the loop?
 abstime: (DECIMAL|INT)
+
+// The time can be specified in units of ms, us or ns. The time unit is case
+// insensitive
 timeunits: (milli|micro|nano)? "s"i
 milli: "m"
 micro: "u"
 nano: "n"
 
+// An action is a line that specifies:
+// - an action body
+// - an action code (unsigned integer) between parentheses
+// - an optional IDLE/BREAK command
 action: ( simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
+
+// Optional IDLE/BREAK command
 cmd: en|br
-en: "IDLE"i
+// The IDLE and break commands are case insensitive
+en: "IDLE"i // TODO: what does the IDLE command do?
 br: "BREAK"i
 code: INT
 
+// A simple action consists of a line of text
 simple: text
 
+// A binary action consists of a line of text that is assigned to a binary value
 binary: text "=" (on | off)
+// Binary values can be specified either with 0/1 syntax or with (case
+// unsensitive) words on and off
 on: "1" | "on"i
 off: "0" | "off"i
 
+// An enum action consists of a line of text that is assigned to an (unsigned)
+// integer value
 enum: text "=" enumval
 enumval:  "[" INT "]"
 
+// A scalar action consists of a line of text that is assigned to either an
+// integer (sign optional) or a float; a float can be specified both in decimal
+// and in exponential form. The value of the scalar has a mandatory unit.
 scalar: text "=" scalarval
 scalarval: (SIGNED_NUMBER | NUMBER) units
 units: WORD
 
+// A test action is a line of text and an address, which are assigned to a
+// test value
 test: text testaddr "=" testval
+// The test address and test value can be either in decimal or in hexadecimal
+// base
 HEXINT: "0x" HEXDIGIT+
 testaddr: "[" (INT | HEXINT) "]"
 testval: (INT | HEXINT)
 
+// The ramp actions starts with either the RAMP or the RAMPLOG keyword, according
+// to the selection of linear or logarithmic ramp, respectively. The ramp is
+// performed for the action specified in the text. The endpoint is specified
+// after the TO keyword, the time in which this ramp is performed is specified
+// by the IN keyword, and the number of steps is specified between parentheses,
+// by an unsigned integer and the NSTEPS keyword
 ramp: (ramplin|ramplog) text "TO" (scalarval|enumval) "IN" time "(" nsteps "STEPS)"
 ramplin: "RAMP"
 ramplog: "RAMPLOG"
 nsteps: INT
-
-%import common.NEWLINE -> _NL
-%import common.WORD
-%import common.INT
-%import common.HEXDIGIT
-%import common.DECIMAL
-%import common.NUMBER
-%import common.SIGNED_NUMBER
-%import common.WS_INLINE
-%import common.WS
-%import common._STRING_INNER
-
-%ignore WS_INLINE
