@@ -14,8 +14,11 @@ class Parser():
 
     def __init__(self, fname, fundict):
         """TODO"""
+
+        # TODO: in future, each file should specify a specific vesion of the
+        # parser
         self._grammar = files("mot4py.lang").joinpath(
-            "motlang.lark").read_text()
+            "motlang_0.1.0.lark").read_text()
         self.parser = Lark(self._grammar, parser="lalr")
         self.fname = fname
         self.fundict = fundict

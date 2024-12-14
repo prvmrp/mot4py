@@ -1,5 +1,10 @@
 // Motlang formal grammar
-// Version: unstable
+// Version: 0.1.0
+
+// This is a fixed version of the language. DO NOT modify this file for
+// updates and/or bugfixes of the grammar; do it in the motlang_unstable.lark
+// file. This is crucial to ensure that a file that parses in one way will
+// always be exactly reproducible.
 
 %import common.NEWLINE -> _NL
 %import common.WORD
