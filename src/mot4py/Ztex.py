@@ -6,8 +6,9 @@ import usb
 
 class Ztex():
 
-    bufsz = 0xE000000
-    memsz = 0x800000
+    bufsz = 0xE00000
+    mem2_04 = 0x800000
+    mem2_13 = 0x10000000
     maxcnt = 0x100000
     vid = 0x221a
     pid = 0x0100
@@ -15,9 +16,14 @@ class Ztex():
 
     def __init__(self):
         self.exttrg = False
-        self.dev = usb.core.find(idVendor=0x221a, idProduct=0x0100)
+        self.dev = usb.core.find(idVendor=self.vid, idProduct=self.pid)
         if self.dev:
             self.dev.set_configuration()
+        fw, brd = self.get_id()
+        if brd == (2, 13):
+            self.maxcnt = self.mem2_13 >> 3
+        else:
+            self.maxcnt = self.mem2_04 >> 3
         self.buf = bytearray()
 
     def reset(self):
@@ -93,7 +99,7 @@ class Ztex():
             ret = self.dev.read(0x82, 4, self.tmo)
             return (int(ret[1]), int(ret[0])), (int(ret[3]), int(ret[2]))
         else:
-            return (1, 0), (1, 0)
+            return (1, 0), (2, 4)
 
     def _dump(self):
         sz = len(self.buf)
