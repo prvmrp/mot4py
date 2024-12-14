@@ -11,3 +11,6 @@ grammar which is defined in the Parser class.
     options:
         show_source: false
         show_root_heading: true
+        heading_level: 3
+        show_root_full_path: false
+        relative_crossrefs: true

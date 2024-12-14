@@ -1,7 +1,10 @@
 // Motlang formal grammar
-// Version: unstable
-// This is the unstable version of the language. Updates and bugfixes shall be
-// done here until the grammar is at a mature enough stage to be released.
+// Version: 0.1.0
+
+// This is a fixed version of the language. DO NOT modify this file for
+// updates and/or bugfixes of the grammar; do it in the motlang_unstable.lark
+// file. This is crucial to ensure that a file that parses in one way will
+// always be exactly reproducible.
 
 %import common.NEWLINE -> _NL
 %import common.WORD
@@ -79,7 +82,7 @@ reltime: "+" abstime
 // TODO: from which time does the absolute time count? Beginning of the loop?
 abstime: (DECIMAL|INT)
 
-// The time can be specified in units of ms, us or ns. The time unit is case
+// The time can be specified in units of s, ms, us or ns. The time unit is case
 // insensitive
 timeunits: (milli|micro|nano)? "s"i
 milli: "m"
@@ -92,10 +95,12 @@ nano: "n"
 // - an optional IDLE/BREAK command
 action: ( simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
 
-// Optional IDLE/BREAK command
+// Optional IDLE/BREAK command.
 cmd: en|br
-// The IDLE and break commands are case insensitive
-en: "IDLE"i // TODO: what does the IDLE command do?
+// The IDLE command disables an action or a loop when present
+en: "IDLE"i 
+// The BREAK command interrupts the loop after the corresponding action when
+// present.
 br: "BREAK"i
 code: INT
 
