@@ -1,4 +1,6 @@
 """Classes representing intermediate code objects."""
+from typing import Optional
+
 from . import spbboards
 
 
@@ -22,9 +24,9 @@ class Function():
 
     _funtype = ('Simple', 'Binary', 'Enum', 'Scalar', 'Test')
 
-    def __init__(self, n, id, d, brds):
-        """TODO"""
-        self.name = n
+    def __init__(self, name: str, id: int, d: dict, brds: dict):
+        """Initialize the """
+        self.name = name
         self.ID = id
         self.desc = d.get('desc')
         self.fmt = d.get('fmt')
@@ -32,102 +34,165 @@ class Function():
         self.comp = d.get('compile')
         self.max = d.get('max')
         self.min = d.get('min')
-        brd, self.ch = n.split('_')
+        brd, self.ch = name.split('_')
         self.brd = brds.get(brd)
 
-    def val2hex(self, val, board=None):
-        """TODO"""
+    def val2hex(self, val: int, board: Optional[str] = None) -> int:
+        """Transform the integer value of the action to its hex code.
+
+        args:
+            val: action value
+            board: board that will perform the action (for calibration)
+
+        returns:
+            : hex code for the action
+        """
         return val
 
     @classmethod
-    def genfun(self, name, id, d, brds):
-        """TODO"""
+    def genfun(self, name: str, id: int, d: dict, brds: dict):
+        """Evaluate the function for the board.
+
+        todo:
+            unused, check if somewhere, then eliminate
+
+        args:
+            name: board name
+            id: board id (unused)
+            d: board configuration dictionary
+            brds: dictionary with all the boards (unused)
+
+        returns:
+            : result of evaluating the calibration function
+
+        raises:
+            ValueError: function of unknown type
+        """
         t = d.get('type')
         if t not in self._funtype:
             raise ValueError('Unknown function type: ' + name)
-            return
-        else:
-            for b in self._funtype:
-                if t == b:
-                    return eval(b + '(name, id, d, brds)')
 
-    def format(self):
-        """TODO"""
+        return eval(t + '(name, id, d, brds)')
+
+    def format(self) -> str:
+        """Format the action into a string."""
         return self.desc
 
 
 class Simple(Function):
-    """TODO"""
+    """Intermediate code representation of a simple action."""
 
     def __init__(self, n, id, d, brds):
-        """TODO"""
+        """
+        Initialize a simple action.
+
+        raises:
+            ValueError: if there is no board compile field
+        """
         super().__init__(n, id, d, brds)
         if self.comp is None:
             raise ValueError(
                 "The Simple function %s requires a compile field" % (self.desc))
-            return
 
-    def val2hex(self, val):
-        """TODO"""
+    def val2hex(self, val: int) -> int:
+        """
+        Compile the action value to an hexadecimal code.
+
+        The compilation is done according to the comp member of the object.
+
+        args:
+            val: (scalar) value of the action (unused)
+
+        returns:
+            : hexadecimal code from `val`
+        """
         return eval(self.comp + '()')
 
-    def format(self, val, addr):
-        """TODO"""
+    def format(self, val: int, addr: int) -> str:
+        """Format the action to a string value."""
         return str.ljust(super().format(), 60)
 
     def _regVCD(self):
-        """TODO"""
+        """Convert action to VCD code."""
         name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var wire 1 %d %s $end\n" % (self.ID, name)
 
     def _dvarVCD(self, val, addr):
-        """TODO"""
+        """
+        Convert digital action to VCD code.
+
+        args:
+            val: action value
+        """
         return "1%d\n" % (self.ID)
 
 
 class Binary(Function):
-    """TODO"""
+    """Intermediate code representation of a binary action."""
 
     def val2hex(self, val):
-        """TODO"""
+        """
+        Compile the action value to an hexadecimal code.
+
+        The compilation is done according to the comp member of the object.
+
+        args:
+            val: (scalar) value of the action (unused)
+
+        returns:
+            : hexadecimal code from `val`
+        """
         self.brd.set_val(val, self.ch)
         return self.brd.param2val(val, self.ch)
 
-    def format(self, val, addr):
-        """TODO"""
+    def format(self, val, addr: int) -> str:
+        """Format the action to a string value."""
         ans = super().format()
         ans += " = " + ("On" if val else "Off")
         return str.ljust(ans, 60)
 
     def _regVCD(self):
-        """TODO"""
+        """Convert action to VCD code."""
         name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var reg 1 %d %s $end\n" % (self.ID, name)
 
-    def _dvarVCD(self, val, addr):
-        """TODO"""
+    def _dvarVCD(self, val, addr: int) -> str:
+        """
+        Convert digital action to VCD code.
+
+        args:
+            val: action value
+        """
         return "%d%d\n" % (1 if val else 0, self.ID)
 
 
 class Enum(Function):
-    """TODO"""
+    """Intermediate code representation of an enum action."""
 
     def val2hex(self, val):
-        """TODO"""
+        """
+        Compile the action value to an hexadecimal code.
+
+        args:
+            val: (scalar) value of the action (unused)
+
+        returns:
+            : hexadecimal code from `val`
+        """
         if self.brd._lutmax >= val:
             self.brd.set_val(val, self.ch)
             return val
-        else:
-            raise ValueError('Invalid state %d for function %s' %
-                             (val, self.desc))
+
+        raise ValueError('Invalid state %d for function %s' % (val, self.desc))
 
     def format(self, val, addr):
-        """TODO"""
+        """Format the action to a string value."""
         ans = super().format() + (" = [%d]" % (val))
         return str.ljust(ans, 60)
 
     def _regVCD(self):
-        """TODO"""
+        """Convert action to VCD code."""
+        # TODO this is not a public function and is not a part of the interface
         name = self.desc.replace(' ', '_').replace('.', '_')
         if self.max:
             j = self.max.bit_length()
@@ -136,23 +201,37 @@ class Enum(Function):
         return "$var reg %d %d %s [%d:0] $end\n" % (j, self.ID, name, j-1)
 
     def _dvarVCD(self, val, addr):
-        """TODO"""
+        """
+        Convert digital action to VCD code.
+
+        args:
+            val: action value
+        """
+        # TODO this is not a public function and is not a part of the interface
         return "%s %d\n" % (bin(val)[1:], self.ID)
 
 
 class Scalar(Function):
-    """TODO"""
+    """Intermediate code representation of scalar function."""
 
     def __init__(self, n, id, d, brds):
-        """TODO"""
         super().__init__(n, id, d, brds)
         if not self.fmt:
             self.fmt = "%.3f%"
         if not self.units:
             self.units = "A.U.%"
 
-    def val2hex(self, val):
-        """TODO"""
+    def val2hex(self, val: int) -> int:
+        """
+        Compile the action value to an hexadecimal code.
+
+        args:
+            val: (scalar) value of the action
+
+        returns:
+            : hexadecimal code from `val`
+        """
+        # evaluate calibration function if present
         if self.comp:
             v1 = eval(self.comp + ('(%f)' % (val)))
         else:
@@ -160,52 +239,104 @@ class Scalar(Function):
         self.brd.set_val(val, self.ch)
         return self.brd.param2val(v1, self.ch)
 
-    def format(self, val, addr):
-        """TODO"""
+    def format(self, val: int, _: int) -> str:
+        """
+        Format the action as a string.
+
+        args:
+            val: integer value of the action
+            addr: integer value of the address
+
+        returns:
+            : string representation of the scalar action
+        """
         ans = super().format()
         fmt = self.fmt if self.fmt else "%.1f"
         un = " " + self.units if self.units else ""
         ans += (" = " + fmt + un) % (val)
         return str.ljust(ans, 60)
 
-    def _regVCD(self):
-        """TODO"""
+    def _regVCD(self) -> str:
+        """Convert action to VCD code."""
         name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var real 64 %d %s $end\n" % (self.ID, name)
 
-    def _dvarVCD(self, val, addr):
-        """TODO"""
+    def _dvarVCD(self, val: int, _: int) -> str:
+        """
+        Convert digital action to VCD code.
+
+        args:
+            val: action value
+        """
         return "r%.16g %d\n" % (val, self.ID)
 
 
 class Test(Function):
-    """TODO"""
+    """Intermediate code representation of test action."""
 
-    def val2hex(self, val):
-        """TODO"""
+    def val2hex(self, val: int) -> int:
+        """
+        Compile value to hexadecimal. Just a NOP.
+
+        args:
+            val: value of the action
+
+        returns:
+            val: value of the action as an hexadecimal code
+        """
         return val
 
-    def format(self, val, addr):
-        """TODO"""
+    def format(self, val: int, addr: int) -> str:
+        """
+        Return a string representation of the action.
+
+        args:
+            val: integer value for the action
+            addr: address for the action
+        """
         ans = super().format()
         ans += " [%s] = %s" % (addr, val)
         return str.ljust(ans, 60)
 
     def _regVCD(self, addr):
-        """TODO"""
+        """
+        Convert action to VCD code.
+
+        args:
+            addr: address for the action
+        """
+        # TODO This is not a private function
+        # TODO check this unused name
         name = self.desc.replace(' ', '_').replace('.', '_')
         return "$var reg 16 A%d ADDR_%d [15:0] $end\n" % (addr, addr)
 
     def _dvarVCD(self, val, addr):
-        """TODO"""
+        """
+        Convert digital action to VCD code.
+
+        args:
+            val: action value
+            addr: action address
+        """
+        # TODO this is not a private function
         return "%s A%d\n" % (bin(val)[1:], addr)
 
 
 class Action():
-    """TODO"""
+    """Intermediate code representation of an action."""
 
-    def __init__(self, fun, val, en=False, br=False, ramp={}, addr=None):
-        """TODO"""
+    def __init__(self, fun: Function, val: int, en: bool = False, br: bool = False, ramp: Optional[dict] = None, addr: Optional[int] = None):
+        """
+        Initialize the action class.
+
+        args:
+            fun: action type for the action
+            val: action value
+            en: action enabled
+            br: break action
+            ramp: dictionary for ramp
+            addr: action address
+        """
         self.fun = fun
         self.val = val
         self.en = en
@@ -214,8 +345,19 @@ class Action():
         self.addr = addr if addr is not None else self.fun.brd.get_addr(
             self.fun.ch)
 
-    def format(self, sz):
-        """TODO"""
+    def format(self, sz: int) -> str:
+        """
+        Return a string representation of the action.
+
+        args:
+            sz: line width of justified text
+
+        returns:
+            str: formatted string
+
+        raises:
+            ValueError: if ramp that is not of Enum or Scalar
+        """
         if self.ramp:
             if not isinstance(self.fun, (Enum, Scalar)):
                 raise ValueError("Invalid ramp for fun %s" % self.fun.desc)
@@ -241,79 +383,156 @@ class Action():
 
         return ans
 
-    def _unramp(self, atime):
-        """TODO"""
-        delta = self.ramp['end'] - self.val
-        if self.val != 0:
-            ratio = self.ramp['end'] / self.val
-        else:
-            raise ValueError("log ramp starting from 0\n")
-        dt = self.ramp['time'] // self.ramp['steps']
-        if self.ramp['log']:
-            dv = ratio ** (1. / self.ramp['steps'])
-        else:
-            dv = delta / self.ramp['steps']
-        l = []
-        v0 = self.val
-        for i in range(self.ramp['steps'] + 1):
-            if self.ramp['log']:
-                self.val = v0 * (dv ** i)
+    def _unramp(self, atime: int) -> list:
+        """
+        Calculate time and value of actions in a ramp.
+
+        args:
+            atime: when the ramp starts (absolute time)
+
+        returns:
+            : list of actions with values and times set according to ramp
+
+        raises:
+            ValueError: if logarithmic ramp starts with 0
+        """
+        t_tot = self.ramp["time"]
+        steps = self.ramp["steps"]
+        is_log = self.ramp["log"]
+        r_end = self.ramp["end"]
+        r_start = self.val
+
+        dt = t_tot // steps
+        if is_log:
+            if r_start != 0:
+                ratio = r_end / r_start
             else:
-                self.val = v0 + dv * i
+                raise ValueError("log ramp starting from 0\n")
+            dv = ratio ** (1. / steps)
+        else:
+            delta = r_end - r_start
+            dv = delta / steps
+
+        l = []
+        v0 = r_start
+        # TODO is this a bug? This would result in an n+1 steps ramp
+        for i in range(steps + 1):
+            self.val = v0 * (dv ** i) if is_log else v0 + dv * i
             l.append({'abst': atime, 'val': self.val})
             atime += dt
+
         return l
 
-    def compile(self, cval, atime=0):
-        """TODO"""
-        db = isinstance(self.fun.brd, spbboards.DO16)
-        aux = {'addr': self.addr, 'en': self.en,
-               'br': self.br, 'db': db, 'fun': self.fun}
+    def compile(self, cval: dict, atime: int = 0) -> list:
+        """
+        Compile the action and return the action list.
+
+        args:
+            cval: cval dictionary with sequence state
+            atime: absolute time of the action
+
+        returns:
+            : list of actions (only one element if not ramp)
+
+        raises:
+            ValueError: if logarithmic ramp starts with 0
+        """
+        aux = {'addr': self.addr,
+               'en': self.en,
+               'br': self.br,
+               'db': isinstance(self.fun.brd, spbboards.DO16),
+               'fun': self.fun
+               }
+
         if not self.ramp:
+            # calculate the binary value of the action
             hexval = self.fun.val2hex(self.val)
             return [{'abst': atime, 'val': self.val, 'bin': hexval} | aux,]
         else:
+            # get the initial ramp value
             self.val = cval['ids'][self.fun.ID]  # no ramps for Test Actions
+            # calculate the list of ramp values and times
             l = self._unramp(atime)
             for e in l:
+                # calculate the hex value of each ramp action and store it in
+                # the "bin" variable
                 hexval = self.fun.val2hex(e['val'])
                 e |= {'bin': hexval} | aux
+            # store the last ramp value in the cval database
             cval['ids'][self.fun.ID] = l[-1]['val']
+            # return the ramp list
             return l
 
 
 class TimedAction():
-    """TODO"""
+    """Intermediate code representation of an action with its time."""
 
-    def __init__(self, rel, time, act):
-        """TODO"""
+    def __init__(self, rel: bool, time: int, act):
+        """
+        Initialize the timed action.
+
+        args:
+            rel: if time is relative
+            time: number of clock cycles
+            act: action
+        """
         self.rel = rel
         self.time = time
         self.action = act
 
-    def format(self, sz):
-        """TODO"""
+    def format(self, sz: int) -> str:
+        """
+        Return a string representation of the timed action.
+
+        args:
+            sz: line width for justification
+
+        returns:
+            a string representation of the action
+        """
         ts = self.timefmt(self.rel, self.time)
         return str.ljust(ts, 15) + self.action.format(sz - 15)
 
-    def timefmt(self, rel, time):
-        """TODO"""
+    def timefmt(self, rel: bool, time: int) -> str:
+        """Format the time string.
+
+        Uses the smallest possible prefix that results in no decimals.
+
+        args:
+            rel: if time is relative
+            time: number of clock cycles
+
+        returns:
+            : a string representation of the time
+        """
         ans = '+' if rel else ''
         prefix = 'ns'
         if time % 1000 == 0:
             time /= 1000
             prefix = 'us'
-        if time % 1000 == 0:
-            time /= 1000
+        if time % 1_000_000 == 0:
+            time /= 1_000_000
             prefix = 'ms'
-        if time % 1000 == 0:
-            time /= 1000
+        if time % 1_000_000_000 == 0:
+            time /= 1_000_000_000
             prefix = 's'
         ans += ("%d" % (time)) + prefix
         return ans
 
-    def compile(self, cval, atime):
-        """TODO"""
+    def compile(self, cval: dict, atime: int) -> list:
+        """
+        Compile the action.
+
+        Sets the correct atime, and then compiles its underlying action with
+        `Action.compile`.
+
+        args:
+            cval: the sequence state
+            atime: the absolute time for the action (ignored)
+
+        returns:
+            : list of compiled actions from `Action.compile`
+        """
         if self.rel:
             atime += self.time
         else:
@@ -324,7 +543,7 @@ class TimedAction():
 class Loop():
     """Intermediate code representation of loop code."""
     # minimum time delta (clock period) in ns
-    _minDT = 100
+    _minD = 100
     # maximum time delta in ns
     _maxDT = 6_840_000_000_000
 
