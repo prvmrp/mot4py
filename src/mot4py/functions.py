@@ -1,4 +1,4 @@
-from . import SPBBoards
+from mot4py import SPBBoards
 
 
 def cAO1_2(val):
