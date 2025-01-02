@@ -1,5 +1,3 @@
-# The MOT programming language
-
 The MOT programming language is used to describe a sequence of actions
 that the experimental apparatus must perform.
 

@@ -1,1 +1,1 @@
-from .parser import Parser
+# from mot4py import __main__

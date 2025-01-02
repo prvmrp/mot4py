@@ -1,8 +1,16 @@
 site_name: "MOT4Py"
 
-theme:
-  name: "readthedocs"
+theme: readthedocs
 
 plugins:
 - search
-- mkdocstrings
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_source: false
+          group_by_category: true
+          show_labels: true
+          show_root_heading: true
+          show_category_heading: true
+          docstring_section_style: "table"

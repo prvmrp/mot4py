@@ -17,13 +17,10 @@ from lark import Lark, visitors
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import pyqtRemoveInputHook
 
-from .Functions import *
-from .parser import *
-from .SPBBoards import SPBBrd
-from .Ztex import Ztex
-
-mainwin = None
-testwin = None
+from mot4py.functions import *
+from mot4py.parser import *
+from mot4py.spbboards import SPBBrd
+from mot4py.Ztex import Ztex
 
 
 def parseconfig(fname):
@@ -100,7 +97,7 @@ def savecb():
             'Mor files (*.mot);;All files (*)'))[0]
         if fn:
             with open(fn, 'w') as file:
-                file.write(prog.format())
+                file.write(str(prog))
                 file.close()
             mainwin.statusbar.showMessage("Prog. saved", 0)
 
@@ -457,7 +454,8 @@ class TestWin(QtWidgets.QWidget):
 
 
 def main():
-    global lockfile, prog, state, fpga, mainwin, testwin
+    global lockfile, prog, state, fpga, Boards, IDdict, IDrev, Fundict
+    global mainwin, testwin, codewin, connwin
     state = {'gui': False, 'prog': None, 'run': False}
 
     # find if another instance is running
@@ -556,7 +554,7 @@ def main():
         # connections
         conndata = []
         for f in Fundict.values():
-            if f.brd and not isinstance(f.brd, SPBBoards.Test):
+            if f.brd and not isinstance(f.brd, spbboards.Test):
                 conndata.append((f.desc, f.brd.conn2str(f.ch), str(f.ID)))
         connwin = TableWin(
             'Conn. Table', ('Function', 'Connection', 'Code'), conndata)

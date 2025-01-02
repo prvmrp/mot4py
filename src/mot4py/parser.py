@@ -3,11 +3,10 @@
 import time
 from importlib.resources import files
 from pathlib import Path
-from typing import Tuple
 
 from lark import Lark, ParseTree, visitors
 
-from .functions import Action, Loop, Test, TimedAction
+from mot4py.functions import Action, Loop, Simple, Test, TimedAction
 
 
 class Parser():
@@ -60,16 +59,10 @@ class Parser():
                 sum += i + (len(l) - i - 1) * l[-1].get('iter')
         return sum
 
-    def format(self) -> str:
-        """
-        Format all loops contained in the parsed program.
-
-        Returns:
-            : a formatted string with a textual representation of the loops.
-        """
+    def __str__(self):
         ans = ''
         for l in self.loops:
-            ans += l.format()
+            ans += str(l)
         return ans
 
     def wrVCD(self):
@@ -120,14 +113,14 @@ class Parser():
                                 acts.append(a.action)
                 for a in acts:
                     if isinstance(a.fun, Test):
-                        f.write(a.fun._regVCD(a.addr))
+                        f.write(a.fun.regVCD(a.addr))
                     else:
-                        f.write(a.fun._regVCD())
+                        f.write(a.fun.regVCD())
                 f.write('$upscope $end\n')
                 f.write('$enddefinitions $end\n')
                 f.write('$dumpvars\n')
                 for a in acts:
-                    f.write(a.fun._dvarVCD(a.val, a.addr))
+                    f.write(a.fun.dvarVCD(a.val, a.addr))
                 f.write('$end\n')
                 l = self.compiled[i]
                 k = 0
@@ -144,7 +137,12 @@ class Parser():
                 for a in l[start:stop]:
                     if a.get('en') and not a.get('nop'):
                         f.write("#%d\n" % (a['abst']))
-                        f.write(a['fun']._dvarVCD(a['val'], a['addr']))
+                        if isinstance(a['fun'], Simple):
+                            f.write(a['fun'].dvarVCD(1, a['addr']))
+                            f.write("#%d\n" % (a['abst'] + Loop._minDT))
+                            f.write(a['fun'].dvarVCD(0, a['addr']))
+                        else:
+                            f.write(a['fun'].dvarVCD(a['val'], a['addr']))
 
 
 class Interpreter(visitors.Interpreter):
@@ -231,7 +229,7 @@ class Interpreter(visitors.Interpreter):
         """
         return self._concat(tree)
 
-    def time(self, tree: ParseTree) -> Tuple[bool, int]:
+    def time(self, tree: ParseTree) -> tuple[bool, int]:
         """
         Create a time tuple from the AST.
 
@@ -383,7 +381,7 @@ class Interpreter(visitors.Interpreter):
                     if isinstance(d, str):
                         return float(d)
 
-    def test(self, tree: ParseTree) -> Tuple[int, int]:
+    def test(self, tree: ParseTree) -> tuple[int, int]:
         """
         Convert test value and test address into integers.
 
@@ -455,7 +453,7 @@ class Interpreter(visitors.Interpreter):
             if isinstance(c, str):
                 return int(c)
 
-    def cmd(self, tree: ParseTree) -> Tuple[bool, bool]:
+    def cmd(self, tree: ParseTree) -> tuple[bool, bool]:
         """
         Return a command tuple from the AST.
 

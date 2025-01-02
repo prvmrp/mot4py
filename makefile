@@ -1,5 +1,5 @@
 build: pyproject.toml
-	pip-compile > requirements.txt
-	pip-sync
-	pip install -e .
+#	pip-compile > requirements.txt
+#	pip-sync
+	pipx install -e .
 	pre-commit install
