@@ -22,8 +22,6 @@
 %import common.WS_INLINE
 // All whitespace
 %import common.WS
-// The inner part of a string (what would normally go inside the "")
-%import common._STRING_INNER
 
 // All inline whitespace is ignored during lexing.
 // As per lark documentation, this is very important, because a LALR(1) parser
@@ -41,23 +39,21 @@ start: loop+
 // iterating section is composed of an inner loop, containing the instructions
 // to be executed, and an iterator, to track the number of iterations to be
 // performed.
-loop: _NL* "LOOP" en? _NL+ comment? (init | (inner iterator) | (init inner iterator)) "ENDLOOP" _NL*
+loop: _NL* "LOOP" EN? _NL+ comment? (init | (inner iterator) | (init inner iterator)) "ENDLOOP" _NL*
 
 // A comment starts with the word COMMENT and ends with the word ENDCOMMENT
 // It can contain any text or number of newlines
-comment: "COMMENT" _NL+ ctext "ENDCOMMENT" _NL*
-
-// Comment string, can span any number of lines
-ctext: (WORD+ WS+)+
+comment: "COMMENT" WS+ ctext+ "ENDCOMMENT" _NL
+ctext: LINE _NL 
+LINE: /.+/
 
 // Simple string, can span only one line
-text: (WORD | WS_INLINE)+
+text: WORD+
 
 // The init section starts with the keyword INIT, followed by exactly one
 // newline, and ends with the keyword ENDINIT. It must contain at least one
 // action.
-// TODO: why only one newline?
-init: "INIT" _NL action+ "ENDINIT" _NL*
+init: "INIT" _NL+ action+ "ENDINIT" _NL*
 
 // The inner sections starts with the keyword INNER and ends with the keyword
 // ENDINNER. It must contain at least one timed action.
@@ -71,37 +67,35 @@ iterator: "ITERATIONS" INT _NL*
 
 // A time specification is composed of a time amount, which can be either
 // relative or absolute, and an unit
-time: (abstime | reltime) timeunits
+time: reltime? abstime timeunits
 
 // A relative time amount is an absolute time amount, preceded by a plus.
-// TODO: from which time should reltime count? From the previous action?
-reltime: "+" abstime
+reltime: "+"
 
 // An absolute time amount can be either a positive decimal number or an unsigned
 // integer.
-// TODO: from which time does the absolute time count? Beginning of the loop?
 abstime: (DECIMAL|INT)
 
 // The time can be specified in units of s, ms, us or ns. The time unit is case
 // insensitive
-timeunits: (milli|micro|nano)? "s"i
-milli: "m"
-micro: "u"
-nano: "n"
+timeunits: (MILLI|MICRO|NANO)? "s"
+MILLI: "m" 
+MICRO: "u" 
+NANO: "n" 
 
 // An action is a line that specifies:
 // - an action body
 // - an action code (unsigned integer) between parentheses
 // - an optional IDLE/BREAK command
-action: ( simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
+action: (simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
 
-// Optional IDLE/BREAK command.
-cmd: en|br
+// Optional IDLE/BREAK command. Only one of them make sense.
+cmd: EN?|BR?
 // The IDLE command disables an action or a loop when present
-en: "IDLE"i 
+EN: "IDLE"i 
 // The BREAK command interrupts the loop after the corresponding action when
 // present.
-br: "BREAK"i
+BR: "BREAK"i
 code: INT
 
 // A simple action consists of a line of text
@@ -109,7 +103,7 @@ simple: text
 
 // A binary action consists of a line of text that is assigned to a binary value
 binary: text "=" (on | off)
-// Binary values can be specified either with 0/1 syntax or with (case
+// binary values can be specified either with 0/1 syntax or with (case
 // unsensitive) words on and off
 on: "1" | "on"i
 off: "0" | "off"i

@@ -34,6 +34,7 @@ class Parser():
         self.compiled = []
         self._compile()
         self.len = self._calc_len()
+        print(self.tree)
 
     def _parse(self):
         """Recursively parse the tree and create function objects."""
@@ -69,7 +70,7 @@ class Parser():
         """
         Create a .vcd file for each loop to view with gtkviewer.
 
-        Creates a file with name `programname_{i}.vcd` for each loop in the file.
+        Creates a file with name `program_name.loop.{i}.vcd` for each loop in the file.
         """
         for i, l in enumerate(self.loops):
             if not l.en:
@@ -177,57 +178,27 @@ class Interpreter(visitors.Interpreter):
             Check whether this function raises any exceptions.
         """
         en = True
-        cmt = None
+        cmt = ''
         init = []
         inner = []
         it = None
 
         for c in tree.children:
-            if c.data == 'en':
-                en = False  # TODO Why is en false if 'en' is encountered?
+            if c.data == 'EN':
+                en = False
             elif c.data == 'comment':
-                cmt = self.visit_children(c)[0]
+                for d in self.visit(c):
+                    if isinstance(d, list):
+                        cmt += d[0] + '\n'
+                if cmt:
+                    cmt = cmt[:-1]
             elif c.data == 'init':
                 init.extend(self.visit_children(c))
             elif c.data == 'inner':
                 inner.extend(self.visit_children(c))
             elif c.data == 'iterator':
-                it = self.visit(c)
-
+                it = int(self.visit(c)[0])
         return Loop(cmt, init, inner, it, en)
-
-    def _concat(self, tree: ParseTree) -> str:
-        """Concatenate text into a python string, remove the last letter."""
-        ans = ''
-        for c in tree.children:
-            ans += c.value
-            if c.value != '\n':
-                ans += ' '
-        return ans[:-1]
-
-    def ctext(self, tree: ParseTree) -> str:
-        """
-        Create string from comment text.
-
-        Args:
-            tree: The AST input.
-
-        Returns:
-            : concatenated string.
-        """
-        return self._concat(tree)
-
-    def text(self, tree: ParseTree) -> str:
-        """
-        Create string from text.
-
-        Args:
-            tree: The AST input.
-
-        Returns:
-            : concatenated string.
-        """
-        return self._concat(tree)
 
     def time(self, tree: ParseTree) -> tuple[bool, int]:
         """
@@ -238,29 +209,24 @@ class Interpreter(visitors.Interpreter):
 
         Returns:
             : Time tuple. The first element is true if the time is
-                relative, the second is the time amount in ns.
+                relative, the second is the time in ns.
         """
         rel = False
         for c in tree.children:
             if c.data == 'reltime':
                 rel = True
-                # TODO Check: reltime and abstime should only have one children,
-                # so iteration would not be needed
-                for d in c.children:
-                    if d.data == 'abstime':
-                        for e in d.children:
-                            t = float(e)
             elif c.data == 'abstime':
-                for d in c.children:
-                    t = float(d)
+                t = float(c.children[0].value)
             elif c.data == 'timeunits':
-                mult = 1_000_000_000
-                for d in c.children:
-                    if d.data == 'milli':
+                if not c.children:
+                    mult = 1_000_000_000
+                else:
+                    d = c.children[0]
+                    if d == 'm':
                         mult = 1_000_000
-                    elif d.data == 'micro':
+                    elif d == 'u':
                         mult = 1_000
-                    elif d.data == 'nano':
+                    elif d == 'n':
                         mult = 1
         return (rel, int(t * mult))
 
@@ -283,15 +249,33 @@ class Interpreter(visitors.Interpreter):
         rd = {}
         addr = None
         for c in tree.children:
-            if c.data in ('simple', 'binary', 'enum', 'scalar'):
-                val = self.visit(c)
+            if c.data == 'simple':
+                val = None
+            elif c.data == 'binary':
+                for d in c.children:
+                    if d.data == 'on':
+                        val = True
+                        break
+                    if d.data == 'off':
+                        val = False
+                        break
+            elif c.data == 'enum':
+                for d in c.children:
+                    if d.data == 'enumval':
+                        val = int(d.children[0])
+                        break
+            elif c.data == 'scalar':
+                for d in c.children:
+                    if d.data == 'scalarval':
+                        val = float(d.children[0])
+                        break
             elif c.data == 'test':
                 addr, val = self.visit(c)
             elif c.data == 'ramp':
                 val = None
                 rd = self.visit(c)
             elif c.data == 'code':
-                code = self.visit(c)
+                code = int(c.children[0])
                 fun = None
                 # TODO fundict should work in the opposite way, to have fast
                 # lookup (codes should be values)
@@ -322,65 +306,6 @@ class Interpreter(visitors.Interpreter):
                 a = self.visit(c)
         return TimedAction(rel, t, a)
 
-    def simple(self, _tree: ParseTree) -> None:
-        """
-        Create a simple action object from AST. Equivalent to a NOP.
-
-        Args:
-            _tree: The input AST. IGNORED
-
-        Returns:
-            : None
-        """
-        return None
-
-    def binary(self, tree: ParseTree) -> bool:
-        """
-        Return the status value of the parsed binary action.
-
-        Args:
-            tree: The input AST.
-
-        Returns:
-            : if the binary action is on or off
-        """
-        for c in tree.children:
-            if c.data == 'on':
-                return True
-            elif c.data == 'off':
-                return False
-
-    def enum(self, tree: ParseTree) -> int:
-        """
-        Convert an enum value to its integer representation.
-
-        Args:
-            tree: The input AST.
-
-        Returns:
-            : the conversion to integer of the enum value.
-        """
-        for c in tree.children:
-            if c.data == 'enumval':
-                for d in c.children:
-                    return int(d)
-
-    def scalar(self, tree: ParseTree) -> float:
-        """
-        Convert a scalar value to its float representation.
-
-        Args:
-            tree: The input AST.
-
-        Returns:
-            : the conversion to float of the enum value.
-        """
-        for c in tree.children:
-            if c.data == 'scalarval':
-                for d in c.children:
-                    if isinstance(d, str):
-                        return float(d)
-
     def test(self, tree: ParseTree) -> tuple[int, int]:
         """
         Convert test value and test address into integers.
@@ -394,13 +319,11 @@ class Interpreter(visitors.Interpreter):
         """
         for c in tree.children:
             if c.data == 'testval':
-                for d in c.children:
-                    s = d.value
-                    val = int(s, 16) if s.startswith('0x') else int(s)
+                s = c.children[0]
+                val = int(s, 16) if s.startswith('0x') else int(s)
             elif c.data == 'testaddr':
-                for d in c.children:
-                    s = d.value
-                    addr = int(s, 16) if s.startswith('0x') else int(s)
+                s = c.children[0]
+                addr = int(s, 16) if s.startswith('0x') else int(s)
         return addr, val
 
     def ramp(self, tree: ParseTree) -> dict:
@@ -420,13 +343,9 @@ class Interpreter(visitors.Interpreter):
             elif c.data == 'ramplog':
                 rd['log'] = True
             elif c.data == 'scalarval':
-                for d in c.children:
-                    if isinstance(d, str):
-                        rd['end'] = float(d)
+                rd['end'] = float(c.children[0])
             elif c.data == 'enumval':
-                for d in c.children:
-                    if isinstance(d, str):
-                        rd['end'] = int(d)
+                rd['end'] = int(c.children[0])
             elif c.data == 'time':
                 rel, t = self.visit(c)
                 if rel:
@@ -434,24 +353,8 @@ class Interpreter(visitors.Interpreter):
                 else:
                     rd['time'] = t
             elif c.data == 'nsteps':
-                for d in c.children:
-                    if isinstance(d, str):
-                        rd['steps'] = int(d)
+                rd['steps'] = int(c.children[0])
         return rd
-
-    def code(self, tree: ParseTree) -> int:
-        """
-        Return the code number from the AST.
-
-        Args:
-            tree: The input AST.
-
-        Returns:
-            : the integer action code.
-        """
-        for c in tree.children:
-            if isinstance(c, str):
-                return int(c)
 
     def cmd(self, tree: ParseTree) -> tuple[bool, bool]:
         """
@@ -467,22 +370,8 @@ class Interpreter(visitors.Interpreter):
         en = False
         br = False
         for c in tree.children:
-            if c.data == 'en':
+            if c.upper() == 'IDLE':
                 en = True
-            if c.data == 'br':
+            if c.upper() == 'BREAK':
                 br = True
         return (en, br)
-
-    def iterator(self, tree: ParseTree) -> int:
-        """
-        Return the number of iterations from the iterator construct.
-
-        Args:
-            tree: The input AST.
-
-        Returns:
-            : the number of iterations to be executed.
-        """
-        for c in tree.children:
-            if isinstance(c, str):
-                return int(c)

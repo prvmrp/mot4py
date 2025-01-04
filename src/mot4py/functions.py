@@ -430,7 +430,7 @@ class Action():
                 ans = str.ljust(ans, sz)
         else:
             ans = str.ljust(self.fun.format(self.val, self.addr), sz)
-        ans += str.ljust("(%d)" % (self.fun.ID), 5)
+        ans += str.rjust("(%d)" % (self.fun.ID), 6)
         if not self.en:
             ans += " IDLE"
         if self.br:
@@ -613,7 +613,7 @@ class Loop():
         - Sort according to absolute time.
         - Merges two actions at the same time if they act on bits on the same DO16 board. 
         - Detects actions too close (less than _minDT) by raising an Exception.
-        - Silently adds NOP actions if too actions are separated by more than _maxDT.
+        - Silently adds NOP actions if two actions are separated by more than _maxDT.
         - Adds to the first element of Loop.inner the key : value pair 'first' : True.
         - Appends {'iter': n} as last element
         """
