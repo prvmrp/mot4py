@@ -8,6 +8,10 @@ Classes representing a program:
 from mot4py import spbboards
 
 
+class MOT4PyError(Exception):
+    pass
+
+
 def cAO1_2(val: float) -> float:
     """
     Example of a compilation function for class Scalar.
@@ -71,11 +75,11 @@ class Function():
             : Instance of the Function subclass
 
         raises:
-            ValueError: the specified subclass is not known
+            MOT4PyError: the specified subclass is not known
         """
         t = d.get('type')
         if t not in self._funtype:
-            raise ValueError('Unknown function type: ' + name)
+            raise MOT4PyError('Unknown function type: ' + name)
             return
         else:
             for b in self._funtype:
@@ -98,11 +102,11 @@ class Simple(Function):
         Initialize a Simple Function.
 
         raises:
-            ValueError: if the key 'compile' is not present in d
+            MOT4PyError: if the key 'compile' is not present in d
         """
         super().__init__(name, id, d, brds)
         if self.comp is None:
-            raise ValueError(
+            raise MOT4PyError(
                 "The Simple function %s requires a compile field" % (self.desc))
 
     def val2hex(self, val) -> int:
@@ -217,14 +221,14 @@ class Enum(Function):
             val as uint16
 
         raises:
-            ValueError: if val > N
+            MOT4PyError: if val > N
         """
         if self.brd._lutmax >= val:
             self.brd.set_val(val, self.ch)
             return val
         else:
-            raise ValueError('Invalid state %d for function %s' %
-                             (val, self.desc))
+            raise MOT4PyError('Invalid state %d for function %s' %
+                              (val, self.desc))
 
     def format(self, val: int, addr: int) -> str:
         """
@@ -416,7 +420,7 @@ class Action():
         """
         if self.ramp:
             if not isinstance(self.fun, (Enum, Scalar)):
-                raise ValueError("Invalid ramp for fun %s" % self.fun.desc)
+                raise MOT4PyError("Invalid ramp for fun %s" % self.fun.desc)
             if self.ramp['log']:
                 ans = "RAMPLOG "
             else:
@@ -448,7 +452,7 @@ class Action():
         if self.val != 0:
             ratio = self.ramp['end'] / self.val
         else:
-            raise ValueError("log ramp starting from 0\n")
+            raise MOT4PyError("log ramp starting from 0\n")
         dt = self.ramp['time'] // self.ramp['steps']
         if self.ramp['log']:
             dv = ratio ** (1. / self.ramp['steps'])
@@ -456,11 +460,14 @@ class Action():
             dv = delta / self.ramp['steps']
         l = []
         v0 = self.val
+        isEnum = isinstance(self.fun, Enum)
         for i in range(self.ramp['steps'] + 1):
             if self.ramp['log']:
                 self.val = v0 * (dv ** i)
             else:
                 self.val = v0 + dv * i
+            if isEnum:
+                self.val = int(self.val)
             l.append({'abst': atime, 'val': self.val})
             atime += dt
         return l
@@ -643,6 +650,7 @@ class Loop():
                 else:
                     atime += l[0]['abst']
             if ln:
+
                 ln.sort(key=lambda v: v['abst'])
                 if self.it > 1:
                     ln[0]['first'] = True
@@ -662,7 +670,7 @@ class Loop():
                         dt = looplist[i].get('abst') - \
                             looplist[i - 1].get('abst')
                     if 0 < dt < self._minDT:
-                        raise ValueError('DT too small: %d ns ' % (dt))
+                        raise MOT4PyError('DT too small: %d ns ' % (dt))
                     elif dt == 0:
                         if (looplist[i]['addr'] == looplist[i - 1]['addr']) and looplist[i]['db'] and looplist[i - 1]['db']:
                             looplist[i]['first'] = looplist[i - 1].get('first')
@@ -671,7 +679,7 @@ class Loop():
                             i -= 1
                             n -= 1
                         else:
-                            raise ValueError('Two actions at the same time: %d ns ' % (
+                            raise MOT4PyError('Two actions at the same time: %d ns ' % (
                                 looplist[i].get('abst')))
                     elif dt > self._maxDT:
                         mt = self._maxDT // 100

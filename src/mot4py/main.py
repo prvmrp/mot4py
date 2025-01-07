@@ -34,7 +34,7 @@ def parseconfig(fname):
     for n, d in config.pop('Board').items():
         try:
             Boards[n] = SPBBrd.genbrd(n, d)
-        except ValueError as err:
+        except MOT4PyError as err:
             error(err.args[0])
     # gen. IDs
     IDdict = {}
@@ -111,7 +111,7 @@ def loadcb():
     if fn:
         try:
             prog = Parser(fn, Fundict)
-        except ValueError as err:
+        except MOT4PyError as err:
             error(err.args[0])
         state['prog'] = fn
         update()
@@ -139,7 +139,7 @@ def _run():
             fpga.softrst()
             fpga.load(prog)
             fpga.start()
-        except ValueError as err:
+        except MOT4PyError as err:
             error(err.args[0])
         state['run'] = True
         if not state['gui']:
@@ -456,6 +456,7 @@ class TestWin(QtWidgets.QWidget):
 def main():
     global lockfile, prog, state, fpga, Boards, IDdict, IDrev, Fundict
     global mainwin, testwin, codewin, connwin
+    global timer
     state = {'gui': False, 'prog': None, 'run': False}
 
     # find if another instance is running
@@ -536,7 +537,7 @@ def main():
         app = QtWidgets.QApplication(sys.argv)
         app.setStyle('Fusion')
 
-        timer = Qt.QTimer()
+        timer = QtCore.QTimer()
         timer.setInterval(1000)
         timer.timeout.connect(getstatcb)
 

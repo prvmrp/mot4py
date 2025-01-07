@@ -1,3 +1,5 @@
 # MOT4Py
 
-One day, this will all be documentation.
+## Hardware
+
+A short description of the Hardware controller by MOT4Py can be found [here](hardware.md)

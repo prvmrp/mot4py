@@ -34,7 +34,6 @@ class Parser():
         self.compiled = []
         self._compile()
         self.len = self._calc_len()
-        print(self.tree)
 
     def _parse(self):
         """Recursively parse the tree and create function objects."""
@@ -241,7 +240,7 @@ class Interpreter(visitors.Interpreter):
             : Action object.
 
         Raises:
-            ValueError: If the action code is not declared in the function
+            MOT4PyError: If the action code is not declared in the function
                 dictionary.
         """
         idle = False
@@ -284,7 +283,7 @@ class Interpreter(visitors.Interpreter):
                         fun = v
                         break
                 if fun is None:
-                    raise ValueError('Code (%d) not declared' % (code))
+                    raise MOT4PyError('Code (%d) not declared' % (code))
             elif c.data == 'cmd':
                 idle, br = self.visit(c)
         return Action(fun, val, not idle, br, rd, addr)
@@ -349,7 +348,7 @@ class Interpreter(visitors.Interpreter):
             elif c.data == 'time':
                 rel, t = self.visit(c)
                 if rel:
-                    raise ValueError('Relative time in RAMP')
+                    raise MOT4PyError('Relative time in RAMP')
                 else:
                     rd['time'] = t
             elif c.data == 'nsteps':

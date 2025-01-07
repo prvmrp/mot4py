@@ -3,6 +3,8 @@ import time
 
 import usb
 
+from mot4py.functions import *
+
 
 class Ztex():
 
@@ -118,7 +120,7 @@ class Ztex():
 
     def load(self, prog):
         if prog.len > self.maxcnt:
-            raise ValueError(
+            raise MOT4PyError(
                 "Program too long (%d instr. vs. %d max)" % (prog.len, self.maxcnt))
         else:
             self.set_trg()
