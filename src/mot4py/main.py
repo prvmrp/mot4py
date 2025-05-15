@@ -20,7 +20,7 @@ from PyQt5.QtCore import pyqtRemoveInputHook
 from mot4py.functions import *
 from mot4py.parser import *
 from mot4py.spbboards import SPBBrd
-from mot4py.Ztex import Ztex
+from mot4py.ztex import Ztex
 
 
 def parseconfig(fname):
@@ -137,23 +137,22 @@ def _run():
     if state['prog']:
         try:
             fpga.softrst()
-            fpga.load(prog)
+            fpga.load(prog.compiled, prog.len)
             fpga.start()
+            state['run'] = True
         except MOT4PyError as err:
             error(err.args[0])
-        state['run'] = True
-        if not state['gui']:
-            while state['run']:
-                time.sleep(1)
-                getstatcb()
 
 
-def getstatcb():
+def getstatcb(verb=True):
     global state
 
     s, n = fpga.get_stat()
     if s == 'I':
         msg = 'Idle'
+        state['run'] = False
+        if state['gui']:
+            timer.stop()
     elif s == 'W':
         msg = 'Waiting for Trigger'
     elif s == 'R':
@@ -162,17 +161,17 @@ def getstatcb():
         msg = "Breakpoint at Instr. %d" % (n,)
     elif s == 'E':
         msg = 'Prog. ended'
-    else:
-        msg = 'Unkown FPGA code'
-    if s in ('I', 'E'):
+        state['run'] = False
         if state['gui']:
             timer.stop()
-        state['run'] = False
+    else:
+        msg = 'Unkown FPGA code'
     if state['gui']:
         update()
         mainwin.statusbar.showMessage(msg, 0)
     else:
-        print(msg)
+        if verb:
+            print(msg)
 
 
 def runcb():
@@ -193,10 +192,11 @@ def stopcb():
     global state
 
     fpga.stop()
-    timer.stop()
+    if state['gui']:
+        timer.stop()
+        mainwin.statusbar.showMessage('Prog. stopped', 0)
+        update()
     state['run'] = False
-    mainwin.statusbar.showMessage('Prog. stopped', 0)
-    update()
 
 
 def testcb():
@@ -457,7 +457,7 @@ def main():
     global lockfile, prog, state, fpga, Boards, IDdict, IDrev, Fundict
     global mainwin, testwin, codewin, connwin
     global timer
-    state = {'gui': False, 'prog': None, 'run': False}
+    state = {'gui': False, 'prog': None, 'run': False, 'debug': False}
 
     # find if another instance is running
     lockfile = tempfile.gettempdir() + '/mot4.pid'
@@ -503,10 +503,17 @@ def main():
         '-e', '--exttrg', help='External Trigger mode', action='store_true')
     parser.add_argument(
         '-i', '--info', help='Print FPGA info then quit', action='store_true')
+    parser.add_argument(
+        '-d', '--debug', help='Verbose debug mode without FPGA connected', action='store_true')
+    parser.add_argument(
+        '-v', '--verbose', help='Verbose mode when running without GUI', action='store_true')
 
     args = parser.parse_args()
 
-    fpga = Ztex()
+    if args.debug:
+        state['debug'] = True
+
+    fpga = Ztex(state['debug'])
     if fpga.dev:
         fpga.exttrg = args.exttrg
         fpga.set_trg()
@@ -522,10 +529,11 @@ def main():
         state['gui'] = False
         prog = Parser(args.fname, Fundict)
         state['prog'] = args.fname
-        if not fpga.dev:
-            error('FPGA not found!')
-        else:
-            _run()
+        time.sleep(2)
+        _run()
+        while state['run']:
+            time.sleep(1)
+            getstatcb(args.verbose)
         exit()
     elif args.reset:
         resetcb()

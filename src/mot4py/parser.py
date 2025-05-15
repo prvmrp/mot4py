@@ -6,7 +6,8 @@ from pathlib import Path
 
 from lark import Lark, ParseTree, visitors
 
-from mot4py.functions import Action, Loop, Simple, Test, TimedAction
+from mot4py.functions import *
+from mot4py.utils import *
 
 
 class Parser():
@@ -25,7 +26,7 @@ class Parser():
         # parser
         self._grammar = files("mot4py.lang").joinpath(
             "motlang_0.1.0.lark").read_text()
-        self.parser = Lark(self._grammar, parser="lalr")
+        self.parser = Lark(self._grammar, parser="earley")
         self.fname = fname
         self.fundict = fundict
         self.tree = self.parser.parse(open(fname).read())
@@ -285,8 +286,8 @@ class Interpreter(visitors.Interpreter):
                 if fun is None:
                     raise MOT4PyError('Code (%d) not declared' % (code))
             elif c.data == 'cmd':
-                idle, br = self.visit(c)
-        return Action(fun, val, not idle, br, rd, addr)
+                idle, br, nop = self.visit(c)
+        return Action(fun, val, not idle, br, nop, rd, addr)
 
     def taction(self, tree: ParseTree) -> TimedAction:
         """
@@ -363,14 +364,17 @@ class Interpreter(visitors.Interpreter):
             tree: The input AST.
 
         Returns:
-            en, br: A tuple indicating if an IDLE or a BREAK command has been
+            en, br, nop: A tuple indicating if an SKIP, BREAK or IDLE command has been
                 given
         """
         en = False
         br = False
+        nop = False
         for c in tree.children:
-            if c.upper() == 'IDLE':
+            if c.upper() == 'SKIP':
                 en = True
             if c.upper() == 'BREAK':
                 br = True
-        return (en, br)
+            if c.upper() == 'IDLE':
+                nop = True
+        return (en, br, nop)

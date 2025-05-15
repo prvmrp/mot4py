@@ -86,16 +86,18 @@ NANO: "n"
 // An action is a line that specifies:
 // - an action body
 // - an action code (unsigned integer) between parentheses
-// - an optional IDLE/BREAK command
+// - an optional IDLE/BREAK/SKIP command
 action: (simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
 
 // Optional IDLE/BREAK command. Only one of them make sense.
-cmd: EN?|BR?
+cmd: (EN|BR|SK)?
 // The IDLE command disables an action or a loop when present
 EN: "IDLE"i 
 // The BREAK command interrupts the loop after the corresponding action when
 // present.
 BR: "BREAK"i
+// The SKIP command ignores an action or a loop when present
+SK: "SKIP"i 
 code: INT
 
 // A simple action consists of a line of text
@@ -108,6 +110,7 @@ binary: text "=" (on | off)
 on: "1" | "on"i
 off: "0" | "off"i
 
+
 // An enum action consists of a line of text that is assigned to an (unsigned)
 // integer value
 enum: text "=" enumval
@@ -117,7 +120,7 @@ enumval:  "[" INT "]"
 // integer (sign optional) or a float; a float can be specified both in decimal
 // and in exponential form. The value of the scalar has a mandatory unit.
 scalar: text "=" scalarval
-scalarval: (SIGNED_NUMBER | NUMBER) units
+scalarval: (NUMBER | SIGNED_NUMBER) units
 units: WORD
 
 // A test action is a line of text and an address, which are assigned to a

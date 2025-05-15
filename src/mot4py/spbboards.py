@@ -44,13 +44,9 @@ class SPBBrd():
         return val
 
     def _dac_param2val(self, val):
-        if (val <= self._vmin):
-            n = 0x8000
-        elif val >= self._vmax:
-            n = 0x7fff
-        else:
-            n = round((val - self._vmin) / (self._vmax - self._vmin) * 0x8000)
-        return n
+        val = min(self._vmax, max(self._vmin, val))
+        n = int(round(val / (self._vmax - self._vmin) * 0x10000))
+        return min(n, 0x7fff)
 
     def _lut_param2val(self, val):
         if (val <= self._lutmax):
@@ -161,8 +157,8 @@ class AO4(SPBBrd):
 
 class AO8(SPBBrd):
 
-    _vmin = -12.
-    _vmax = 12.
+    _vmin = -12.288
+    _vmax = 12.288
 
     def __init__(self, name, d):
         super().__init__(name, d)

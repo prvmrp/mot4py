@@ -52,6 +52,11 @@ desc = 'Trigger'
 type = 'Binary'
 id = 'DO1_0'
 
+[SPB.DO1_1]
+desc = 'Trigger CCD'
+type = 'Binary'
+id = 'DO1_1'
+
 [SPB.AO1_2]
 desc = 'Mot B Current'
 type = 'Scalar'
@@ -61,6 +66,36 @@ max = 20.0
 fmt = '%.3f'
 units = 'A'
 compile = 'cAO1_2'
+
+[SPB.AO1_3]
+desc = 'Shim X Current'
+type = 'Scalar'
+id = 'AO1_3'
+min = -1200.0
+max = 1200.0
+fmt = '%.3f'
+units = 'mA'
+compile = 'cComp_Coils'
+
+[SPB.AO1_4]
+desc = 'Shim y Current'
+type = 'Scalar'
+id = 'AO1_4'
+min = -1200.0
+max = 1200.0
+fmt = '%.3f'
+units = 'mA'
+compile = 'cComp_Coils'
+
+[SPB.AO1_5]
+desc = 'Shim X Current'
+type = 'Scalar'
+id = 'AO1_5'
+min = -1200.0
+max = 1200.0
+fmt = '%.3f'
+units = 'mA'
+compile = 'cComp_Coils'
 
 [SPB.DDS1_F0]
 desc = 'Ref Cooler Lock Freq'
@@ -75,6 +110,22 @@ units = 'Hz'
 desc = 'Ref Cooler Amp'
 type = 'Enum'
 id = 'DDS1_A0'
+min = 0
+max = 1024
+
+[SPB.DDS2_F0]
+desc = 'Ref Cooler Lock Freq'
+type = 'Scalar'
+id = 'DDS2_F0'
+min = 60e6
+max = 1205e6
+fmt = '%.5f'
+units = 'Hz'
+
+[SPB.DDS2_A0]
+desc = 'Ref Cooler Amp'
+type = 'Enum'
+id = 'DDS2_A0'
 min = 0
 max = 1024
 

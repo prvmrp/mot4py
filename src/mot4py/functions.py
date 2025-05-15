@@ -6,10 +6,7 @@ Classes representing a program:
 3) Loop.
 """
 from mot4py import spbboards
-
-
-class MOT4PyError(Exception):
-    pass
+from mot4py.utils import *
 
 
 def cAO1_2(val: float) -> float:
@@ -23,6 +20,11 @@ def cAO1_2(val: float) -> float:
             a float in hardware units (here Volt)
     """
     return 0.5 * val
+
+
+def cComp_Coils(val: float) -> float:
+
+    return val / 97.5
 
 
 class Function():
@@ -399,11 +401,12 @@ class Action():
     if the parent Function is of Enum or Scalar type.
     """
 
-    def __init__(self, fun, val, en: bool = False, br: bool = False, ramp: dict = {}, addr=None):
+    def __init__(self, fun, val, en: bool = False, br: bool = False, nop: bool = False, ramp: dict = {}, addr=None):
         self.fun = fun
         self.val = val
         self.en = en
         self.br = br
+        self.nop = nop
         self.ramp = ramp
         self.addr = addr if addr is not None else self.fun.brd.get_addr(
             self.fun.ch)
@@ -436,9 +439,11 @@ class Action():
             ans = str.ljust(self.fun.format(self.val, self.addr), sz)
         ans += str.rjust("(%d)" % (self.fun.ID), 6)
         if not self.en:
-            ans += " IDLE"
+            ans += " SKIP"
         if self.br:
             ans += " BREAK"
+        if self.nop:
+            ans += " IDLE"
         ans += '\n'
 
         return ans
@@ -486,11 +491,12 @@ class Action():
         'bin' : uint16 - data to be written on the bus
         'en' : bool - True if the action is enabled
         'br' : bool - True if a breakpoint
+        'nop' : bool - True if a nop
         'db' : bool - True if the board is a DO16 
         """
         db = isinstance(self.fun.brd, spbboards.DO16)
         aux = {'addr': self.addr, 'en': self.en,
-               'br': self.br, 'db': db, 'fun': self.fun}
+               'br': self.br, 'nop': self.nop, 'db': db, 'fun': self.fun}
         if not self.ramp:
             hexval = self.fun.val2hex(self.val)
             return [{'abst': atime, 'val': self.val, 'bin': hexval} | aux,]
@@ -578,6 +584,8 @@ class Loop():
 
     At least one between init and (inner + iterator) must be specified
     """
+    # interval in INIT between consecutive actions. Use 30us to deal with linear firmware in DDS
+    _initDT = 30000
     # min DT in ns. The Bus runs at 10 MHz.
     _minDT = 100
     # max DT in ns, 114 min, an integer number of min. < 100 * 2**36 ns
@@ -627,7 +635,7 @@ class Loop():
         looplist = []
         cval = {'ids': {}, 'addrs': {}}
         if self.en:
-            atime = self._minDT
+            atime = self._initDT
             for a in self.init:
                 if a.en:
                     l = a.compile(cval, atime)
@@ -635,7 +643,7 @@ class Loop():
                         cval['addrs'][a.addr] = a.val
                     else:
                         cval['ids'][a.fun.ID] = a.val
-                    atime += self._minDT
+                    atime += self._initDT
                     looplist.extend(l)
             ln = []
             for a in self.inner:
