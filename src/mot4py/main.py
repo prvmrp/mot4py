@@ -1,4 +1,5 @@
 import argparse
+import gc
 import os
 import signal
 import sys
@@ -166,8 +167,8 @@ def getstatcb(verb=True):
             timer.stop()
     else:
         msg = 'Unkown FPGA code'
+    update()
     if state['gui']:
-        update()
         mainwin.statusbar.showMessage(msg, 0)
     else:
         if verb:
@@ -195,8 +196,8 @@ def stopcb():
     if state['gui']:
         timer.stop()
         mainwin.statusbar.showMessage('Prog. stopped', 0)
-        update()
     state['run'] = False
+    update()
 
 
 def testcb():
@@ -211,20 +212,23 @@ def quitcb():
 
 
 def update():
-    mainwin.actionLoad.setEnabled(not state['run'])
-    mainwin.reloadbt.setEnabled(state['prog'] is not None and not state['run'])
-    mainwin.actionReload.setEnabled(
-        state['prog'] is not None and not state['run'])
-    mainwin.actionSave.setEnabled(state['prog'] is not None)
-    mainwin.actionWrite_VCD.setEnabled(state['prog'] is not None)
-    mainwin.runbt.setEnabled(state['prog'] is not None and not state['run'])
-    mainwin.actionRun.setEnabled(
-        state['prog'] is not None and not state['run'])
-    mainwin.stopbt.setEnabled(state['run'])
-    mainwin.actionStop.setEnabled(state['run'])
-    mainwin.testbt.setEnabled(not state['run'])
-    mainwin.actionTest.setEnabled(not state['run'])
-    mainwin.resetbt.setEnabled(not state['run'])
+    if state['gui']:
+        mainwin.actionLoad.setEnabled(not state['run'])
+        mainwin.reloadbt.setEnabled(
+            state['prog'] is not None and not state['run'])
+        mainwin.actionReload.setEnabled(
+            state['prog'] is not None and not state['run'])
+        mainwin.actionSave.setEnabled(state['prog'] is not None)
+        mainwin.actionWrite_VCD.setEnabled(state['prog'] is not None)
+        mainwin.runbt.setEnabled(
+            state['prog'] is not None and not state['run'])
+        mainwin.actionRun.setEnabled(
+            state['prog'] is not None and not state['run'])
+        mainwin.stopbt.setEnabled(state['run'])
+        mainwin.actionStop.setEnabled(state['run'])
+        mainwin.testbt.setEnabled(not state['run'])
+        mainwin.actionTest.setEnabled(not state['run'])
+        mainwin.resetbt.setEnabled(not state['run'])
 
 
 def error(msg):
@@ -529,7 +533,8 @@ def main():
         state['gui'] = False
         prog = Parser(args.fname, Fundict)
         state['prog'] = args.fname
-        time.sleep(2)
+        #        time.sleep(2)
+        gc.collect()
         _run()
         while state['run']:
             time.sleep(1)

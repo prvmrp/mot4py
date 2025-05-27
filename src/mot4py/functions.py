@@ -658,11 +658,9 @@ class Loop():
                 else:
                     atime += l[0]['abst']
             if ln:
-
                 ln.sort(key=lambda v: v['abst'])
-                if self.it > 1:
-                    ln[0]['first'] = True
-                    ln.append({'iter': self.it})
+                ln[0]['first'] = True
+                ln.append({'iter': self.it})
             looplist.extend(ln)
 
             looplist[0]['relt'] = looplist[0].get('abst') // 100

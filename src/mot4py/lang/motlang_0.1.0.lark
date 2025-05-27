@@ -39,7 +39,7 @@ start: loop+
 // iterating section is composed of an inner loop, containing the instructions
 // to be executed, and an iterator, to track the number of iterations to be
 // performed.
-loop: _NL* "LOOP" EN? _NL+ comment? (init | (inner iterator) | (init inner iterator)) "ENDLOOP" _NL*
+loop: _NL* "LOOP" cmd? _NL+ comment? (init | (inner iterator) | (init inner iterator)) "ENDLOOP" _NL*
 
 // A comment starts with the word COMMENT and ends with the word ENDCOMMENT
 // It can contain any text or number of newlines
@@ -91,12 +91,12 @@ action: (simple | binary | enum | scalar | test | ramp) "(" code ")" cmd? _NL+
 
 // Optional IDLE/BREAK command. Only one of them make sense.
 cmd: (EN|BR|SK)?
-// The IDLE command disables an action or a loop when present
+// The IDLE command disables an action or a loop when present preserving timing
 EN: "IDLE"i 
 // The BREAK command interrupts the loop after the corresponding action when
 // present.
 BR: "BREAK"i
-// The SKIP command ignores an action or a loop when present
+// The SKIP command ignores an action or a loop when present shifting times
 SK: "SKIP"i 
 code: INT
 

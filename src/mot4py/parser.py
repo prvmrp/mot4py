@@ -44,7 +44,8 @@ class Parser():
     def _compile(self):
         """Recursively call the compile method of the function objects."""
         for l in self.loops:
-            self.compiled.append(l.compile())
+            if l.en:
+                self.compiled.append(l.compile())
 
     def _calc_len(self) -> int:
         """Calculate the length of the compiled actions."""
@@ -184,8 +185,8 @@ class Interpreter(visitors.Interpreter):
         it = None
 
         for c in tree.children:
-            if c.data == 'EN':
-                en = False
+            if c.data == 'cmd':
+                en = not self.visit(c)[0]  # only SKIP makes sense here
             elif c.data == 'comment':
                 for d in self.visit(c):
                     if isinstance(d, list):
