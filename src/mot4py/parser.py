@@ -21,24 +21,22 @@ class Parser():
             fname: the program path
             fundict: a dictionary with all the functions and function codes
         """
-
         # TODO: in future, each file should specify a specific vesion of the
         # parser
         self._grammar = files("mot4py.lang").joinpath(
             "motlang_0.1.0.lark").read_text()
-        self.parser = Lark(self._grammar, parser="earley")
+        self.parser = Lark(self._grammar, parser="lalr")
         self.fname = fname
         self.fundict = fundict
-        self.tree = self.parser.parse(open(fname).read())
         self.loops = []
-        self._parse()
+        self._parse(self.parser.parse(open(fname).read()))
         self.compiled = []
         self._compile()
         self.len = self._calc_len()
 
-    def _parse(self):
+    def _parse(self, tree):
         """Recursively parse the tree and create function objects."""
-        for l in self.tree.children:
+        for l in tree.children:
             self.loops.append(Interpreter(self.fundict).visit(l))
 
     def _compile(self):
@@ -247,6 +245,7 @@ class Interpreter(visitors.Interpreter):
         """
         idle = False
         br = False
+        nop = False
         rd = {}
         addr = None
         for c in tree.children:

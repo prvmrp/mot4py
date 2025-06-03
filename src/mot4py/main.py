@@ -127,7 +127,7 @@ def reloadcb():
     global prog
 
     if state['prog']:
-        prog = Parser(state['prog'], Fundict)n
+        prog = Parser(state['prog'], Fundict)
         mainwin.statusbar.showMessage("Prog. reloaded", 0)
 
 
@@ -137,15 +137,16 @@ def _run():
     if state['prog']:
         try:
             fpga.softrst()
-            while True:
+            while not state['debug']:
                 time.sleep(0.1)
                 s, n = fpga.get_stat()
                 if s == 'I':
                     break
             fpga.load(prog.compiled, prog.len)
-            while s != 'W':
-                time.sleep(0.1)
-                s, n = fpga.get_stat()
+            if not state['debug']:
+                while s != 'W':
+                    time.sleep(0.1)
+                    s, n = fpga.get_stat()
             fpga.start()
             state['run'] = True
         except MOT4PyError as err:
@@ -540,7 +541,6 @@ def main():
         state['gui'] = False
         prog = Parser(args.fname, Fundict)
         state['prog'] = args.fname
-        time.sleep(2)
         _run()
         while state['run']:
             time.sleep(1)
