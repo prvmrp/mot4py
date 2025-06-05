@@ -646,6 +646,7 @@ class Loop():
                     atime += self._initDT
                     looplist.extend(l)
             ln = []
+            atime = 0
             for a in self.inner:
                 if a.action.en:
                     l = a.compile(cval, atime)
@@ -672,6 +673,7 @@ class Loop():
                 if not looplist[i].get('iter'):
                     if looplist[i].get('first'):
                         dt = looplist[i].get('abst')
+                        print(dt)
                     else:
                         dt = looplist[i].get('abst') - \
                             looplist[i - 1].get('abst')
