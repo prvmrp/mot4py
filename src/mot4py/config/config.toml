@@ -13,7 +13,7 @@ opts = {vmin = -12.228, vmax = 12.228}
 desc = "RF Lock DDS"
 type = "RF9958LIN"
 address = 32
-opts = {A = [8.5e6,  8.5e6], B = [50.0, 50.0]}
+opts = {A = [8.5e6,  8.5e6], B = [50.0, 100.0]}
 
 #default A = 60 MHz, B=1kHz
 [Board.DDS2]
@@ -106,10 +106,26 @@ max = 11.5e6
 fmt = '%.5f'
 units = 'Hz'
 
+[SPB.DDS1_F1]
+desc = 'Ref Repumper Lock Freq'
+type = 'Scalar'
+id = 'DDS1_F1'
+min = 8.5e6
+max = 11.5e6
+fmt = '%.5f'
+units = 'Hz'
+
 [SPB.DDS1_A0]
 desc = 'Ref Cooler Amp'
 type = 'Enum'
 id = 'DDS1_A0'
+min = 0
+max = 1024
+
+[SPB.DDS1_A1]
+desc = 'Ref Repumper Amp'
+type = 'Enum'
+id = 'DDS1_A1'
 min = 0
 max = 1024
 

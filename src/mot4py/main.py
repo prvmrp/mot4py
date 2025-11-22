@@ -115,12 +115,12 @@ def loadcb():
             error(err.args[0])
         state['prog'] = fn
         update()
-        mainwin.statusbar.showMessage("Prog. loaded", 0)
+        mainwin.statusbar.showMessage("Prog. loaded")
 
 
 def VCDcb():
     prog.wrVCD()
-    mainwin.statusbar.showMessage("VCD file(s) saved", 0)
+    mainwin.statusbar.showMessage("VCD file(s) saved")
 
 
 def reloadcb():
@@ -128,7 +128,7 @@ def reloadcb():
 
     if state['prog']:
         prog = Parser(state['prog'], Fundict)
-        mainwin.statusbar.showMessage("Prog. reloaded", 0)
+        mainwin.statusbar.showMessage("Prog. reloaded")
 
 
 def _run():
@@ -136,7 +136,6 @@ def _run():
 
     if state['prog']:
         try:
-            fpga.softrst()
             while not state['debug']:
                 time.sleep(0.1)
                 s, n = fpga.get_stat()
@@ -177,15 +176,17 @@ def getstatcb(verb=True):
         msg = 'Unkown FPGA code'
     update()
     if state['gui']:
-        mainwin.statusbar.showMessage(msg, 0)
+        mainwin.statusbar.showMessage(msg)
     else:
         if verb:
             print(msg)
 
 
 def runcb():
+    mainwin.statusbar.showMessage('FPGA loading..', 0)
+    QtWidgets.QApplication.processEvents()
     _run()
-    mainwin.statusbar.showMessage('Prog. running', 0)
+    mainwin.statusbar.showMessage('Prog. running..', 0)
     timer.start()
     update()
 
@@ -194,7 +195,7 @@ def resetcb():
     fpga.reset()
     if state['gui']:
         msg = "FPGA reset" if fpga.dev else "FPGA not found"
-        mainwin.statusbar.showMessage(msg, 0)
+        mainwin.statusbar.showMessage(msg)
 
 
 def stopcb():
@@ -203,7 +204,7 @@ def stopcb():
     fpga.stop()
     if state['gui']:
         timer.stop()
-        mainwin.statusbar.showMessage('Prog. stopped', 0)
+        mainwin.statusbar.showMessage('Prog. stopped')
     state['run'] = False
     update()
 
@@ -534,7 +535,7 @@ def main():
         state['gui'] = False
         fwver, brdver = fpga.get_id()
         print('Firmware Ver. %d.%d' % fwver)
-        print('Board Num. %d.%d' % brdver)
+        print('Board Type %d.%d' % brdver)
         exit()
 
     if args.fname is not None:
