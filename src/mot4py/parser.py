@@ -18,18 +18,19 @@ class Parser():
         Parse the program.
 
         Args:
-            fname: the program path
+            fname: the program path or a multiline string
             fundict: a dictionary with all the functions and function codes
         """
-        # TODO: in future, each file should specify a specific vesion of the
-        # parser
         self._grammar = files("mot4py.lang").joinpath(
             "motlang_0.1.0.lark").read_text()
         self.parser = Lark(self._grammar, parser="lalr")
         self.fname = fname
         self.fundict = fundict
         self.loops = []
-        self._parse(self.parser.parse(open(fname).read()))
+        if self.fname.find('\n') < 0:
+            self._parse(self.parser.parse(open(self.fname).read()))
+        else:
+            self._parse(self.parser.parse(self.fname))
         self.compiled = []
         self._compile()
         self.len = self._calc_len()
@@ -248,6 +249,7 @@ class Interpreter(visitors.Interpreter):
         nop = False
         rd = {}
         addr = None
+        un = None
         for c in tree.children:
             if c.data == 'simple':
                 val = None
@@ -268,6 +270,7 @@ class Interpreter(visitors.Interpreter):
                 for d in c.children:
                     if d.data == 'scalarval':
                         val = float(d.children[0])
+                        un = str(d.children[1].children[0])
                         break
             elif c.data == 'test':
                 addr, val = self.visit(c)
@@ -287,7 +290,7 @@ class Interpreter(visitors.Interpreter):
                     raise MOT4PyError('Code (%d) not declared' % (code))
             elif c.data == 'cmd':
                 idle, br, nop = self.visit(c)
-        return Action(fun, val, not idle, br, nop, rd, addr)
+        return Action(fun, val, un, not idle, br, nop, rd, addr)
 
     def taction(self, tree: ParseTree) -> TimedAction:
         """
@@ -344,6 +347,7 @@ class Interpreter(visitors.Interpreter):
                 rd['log'] = True
             elif c.data == 'scalarval':
                 rd['end'] = float(c.children[0])
+                rd['units'] = str(c.children[1].children[0])
             elif c.data == 'enumval':
                 rd['end'] = int(c.children[0])
             elif c.data == 'time':

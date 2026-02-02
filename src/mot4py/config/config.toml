@@ -1,24 +1,25 @@
 [Board.DO1]
 desc = "Digital Output Board #1"
 type = "DO16"
-address = 1
+address = 3
 
 [Board.AO1]
 desc = "Analog Output Board #1"
 type = "AO8"
-address = 8
-opts = {vmin = -12.228, vmax = 12.228}
+address = 24
+opts = {vmin = -12.288, vmax = 12.288}
 
 [Board.DDS1]
 desc = "RF Lock DDS"
 type = "RF9958LIN"
-address = 32
+address = 40
 opts = {A = [8.5e6,  8.5e6], B = [50.0, 100.0]}
 
 #default A = 60 MHz, B=1kHz
 [Board.DDS2]
 desc = "AOM DDS"
 type = "RF9958LIN"
+opts = {A = [60.0e6,  60.0e6], B = [1000.0, 1000.0]}
 address = 36
 
 #IDs
@@ -57,6 +58,75 @@ desc = 'Trigger CCD'
 type = 'Binary'
 id = 'DO1_1'
 
+[SPB.DO1_2]
+desc = 'Repumper Lock Hold'
+type = 'Binary'
+id = 'DO1_1'
+
+[SPB.DDS1_F0]
+desc = 'Ref Rep Freq'
+type = 'Scalar'
+id = 'DDS1_F0'
+min = 8.5e6
+max = 15.e6
+fmt = '%.5f'
+units = 'Hz'
+compile = 'CComp_Freq'
+
+[SPB.DDS1_A0]
+desc = 'Ref Rep Amp'
+type = 'Enum'
+id = 'DDS1_A0'
+min = 0
+max = 1024
+
+[SPB.DDS1_F1]
+desc = 'Ref Cool Freq'
+type = 'Scalar'
+id = 'DDS1_F1'
+min = 8.5e6
+max = 15.e6
+fmt = '%.5f'
+units = 'Hz'
+compile = 'CComp_Freq'
+
+[SPB.DDS1_A1]
+desc = 'Ref Cool Amp'
+type = 'Enum'
+id = 'DDS1_A1'
+min = 0
+max = 1024
+
+[SPB.DDS2_F0]
+desc = 'AOM Freq.'
+type = 'Scalar'
+id = 'DDS2_F0'
+fmt = '%.5f'
+units = 'Hz'
+compile = 'CComp_Freq'
+
+[SPB.DDS2_A0]
+desc = 'AOM Amp'
+type = 'Enum'
+id = 'DDS2_A0'
+min = 0
+max = 1024
+
+[SPB.DDS2_F1]
+desc = 'ODT Freq'
+type = 'Scalar'
+id = 'DDS2_F1'
+fmt = '%.5f'
+units = 'Hz'
+compile = 'CComp_Freq'
+
+[SPB.DDS2_A1]
+desc = 'ODT Amp'
+type = 'Enum'
+id = 'DDS2_A1'
+min = 0
+max = 1024
+
 [SPB.AO1_2]
 desc = 'Mot B Current'
 type = 'Scalar'
@@ -65,7 +135,7 @@ min = 0.0
 max = 20.0
 fmt = '%.3f'
 units = 'A'
-compile = 'cAO1_2'
+compile = 'cMOT_Current'
 
 [SPB.AO1_3]
 desc = 'Shim X Current'
@@ -96,53 +166,5 @@ max = 1200.0
 fmt = '%.3f'
 units = 'mA'
 compile = 'cComp_Coils'
-
-[SPB.DDS1_F0]
-desc = 'Ref Cooler Lock Freq'
-type = 'Scalar'
-id = 'DDS1_F0'
-min = 8.5e6
-max = 11.5e6
-fmt = '%.5f'
-units = 'Hz'
-
-[SPB.DDS1_F1]
-desc = 'Ref Repumper Lock Freq'
-type = 'Scalar'
-id = 'DDS1_F1'
-min = 8.5e6
-max = 11.5e6
-fmt = '%.5f'
-units = 'Hz'
-
-[SPB.DDS1_A0]
-desc = 'Ref Cooler Amp'
-type = 'Enum'
-id = 'DDS1_A0'
-min = 0
-max = 1024
-
-[SPB.DDS1_A1]
-desc = 'Ref Repumper Amp'
-type = 'Enum'
-id = 'DDS1_A1'
-min = 0
-max = 1024
-
-[SPB.DDS2_F0]
-desc = 'Ref Cooler Lock Freq'
-type = 'Scalar'
-id = 'DDS2_F0'
-min = 60e6
-max = 1205e6
-fmt = '%.5f'
-units = 'Hz'
-
-[SPB.DDS2_A0]
-desc = 'Ref Cooler Amp'
-type = 'Enum'
-id = 'DDS2_A0'
-min = 0
-max = 1024
 
 

@@ -22,11 +22,13 @@
 %import common.WS_INLINE
 // All whitespace
 %import common.WS
+// allow shell-style comments
+%import common.SH_COMMENT
 
 // All inline whitespace is ignored during lexing.
 // As per lark documentation, this is very important, because a LALR(1) parser
 // needs to have all extraneous elements excluded for optimal performance.
-%ignore WS_INLINE
+%ignore WS_INLINE | SH_COMMENT _NL
 
 // The start rule is the entrypoint for lark
 // A program is composed of one or more loops

@@ -9,22 +9,31 @@ from mot4py import spbboards
 from mot4py.utils import *
 
 
-def cAO1_2(val: float) -> float:
+def cMOT_Current(val: float) -> float:
     """
-    Example of a compilation function for class Scalar.
+    Converts the current in A to the value in V for Delta Electronika power supply
 
     args:
-         val is a float in natural units (here Ampere) 
+         val (float): Current in A
 
     returns:
-            a float in hardware units (here Volt)
+            float: to be used as current-programming voltage (here Volt)
     """
-    return 0.5 * val
+    return 0.05*val
 
 
 def cComp_Coils(val: float) -> float:
 
     return val / 97.5
+
+
+def cComp_Freq(val: float, units: str) -> float:
+    if units == 'kHz':
+        val *= 1.e3
+    elif units == 'MHz':
+        val *= 1.e6
+
+    return val
 
 
 class Function():
@@ -95,7 +104,7 @@ class Function():
 class Simple(Function):
     """
     Function subclass that does not require any argument.
-    The 'compile' key in 'config.toml' must be the name of a valid Python
+    The 'compile' key in 'config.toml' is the name of a valid Python
     function in the code returning a uint16 value to be used as data.
     """
 
@@ -107,29 +116,32 @@ class Simple(Function):
             MOT4PyError: if the key 'compile' is not present in d
         """
         super().__init__(name, id, d, brds)
-        if self.comp is None:
-            raise MOT4PyError(
-                "The Simple function %s requires a compile field" % (self.desc))
 
-    def val2hex(self, val) -> int:
+    def val2hex(self, val, un) -> int:
         """
         Compute the uint16 value to be written on the data bus. 
 
         args:
             val: ignored
+            un: ignored
 
         returns:
             uint16 as returned by the 'compile' function
+            or 0 if 'compile' is not provided 
         """
-        return eval(self.comp + '()')
+        if self.comp:
+            return eval(self.comp + '()')
+        else:
+            return 0
 
-    def format(self, val: int, addr: int) -> str:
+    def format(self, val: int, addr: int, units) -> str:
         """
         Emit str for pretty printing.
 
         args:
-            val: any, ignored
-            addr: board address, ignored
+            val: ignored
+            addr: ignored
+            units: ignored
 
         returns:
             formatted function description
@@ -159,12 +171,13 @@ class Binary(Function):
     Function subclass taking a binary argument i.e. On/Off, zero/non zero etc.
     """
 
-    def val2hex(self, val: int) -> int:
+    def val2hex(self, val: int, un) -> int:
         """
         Compute the uint16 value to be written on the data bus. 
 
-        args:
+        args: 
             val: ignored
+            un: ignored
 
         returns:
             uint16 as returned by the 'param2val()' method of the relevant
@@ -173,13 +186,14 @@ class Binary(Function):
         self.brd.set_val(val, self.ch)
         return self.brd.param2val(val, self.ch)
 
-    def format(self, val: int, addr: int) -> str:
+    def format(self, val: int, addr: int, units: str) -> str:
         """
         Emit str for pretty printing.
 
         args:
             val: int, 0 = Off, else On
-            addr: board address, ignored
+            addr: ignored
+            units: ignored
 
         returns:
             formatted function description
@@ -212,12 +226,13 @@ class Enum(Function):
     N depends on board and channel
     """
 
-    def val2hex(self, val: int) -> int:
+    def val2hex(self, val: int, un) -> int:
         """
         Compute the uint16 value to be written on the data bus. 
 
         args:
             val: int <= N
+            un: ignored
 
         returns:
             val as uint16
@@ -232,13 +247,14 @@ class Enum(Function):
             raise MOT4PyError('Invalid state %d for function %s' %
                               (val, self.desc))
 
-    def format(self, val: int, addr: int) -> str:
+    def format(self, val: int, addr: int, units: str) -> str:
         """
         Emit str for pretty printing.
 
         args:
             val: int
-            addr: board address, ignored
+            addr: ignored
+            units: ignored
 
         returns:
             formatted function description
@@ -282,10 +298,8 @@ class Scalar(Function):
         super().__init__(name, id, d, brds)
         if not self.fmt:
             self.fmt = "%.3f%"
-        if not self.units:
-            self.units = "A.U.%"
 
-    def val2hex(self, val: int) -> int:
+    def val2hex(self, val: int, un: str) -> int:
         """
         Compute the uint16 value to be written on the data bus. 
         It can use hardware or physical units. As an example, on
@@ -299,32 +313,38 @@ class Scalar(Function):
 
         args:
             val: uint16
+            un: str
 
         returns:
              uint16
         """
 
         if self.comp:
-            v1 = eval(self.comp + ('(%f)' % (val)))
+            v1 = eval(f'{self.comp}({val}, "{un}")')
         else:
             v1 = val
         self.brd.set_val(val, self.ch)
         return self.brd.param2val(v1, self.ch)
 
-    def format(self, val: float, addr: int) -> str:
+    def format(self, val: float, addr: int, units: str) -> str:
         """
         Emit str for pretty printing.
 
         args:
             val: float
             addr: board address, ignored
+            units: units for the current actions
 
         returns:
             formatted function description
         """
         ans = super().__str__()
         fmt = self.fmt if self.fmt else "%.1f"
-        un = " " + self.units if self.units else ""
+        un = " "
+        if units:
+            un += units
+        elif self.units:
+            un += self.units
         ans += (" = " + fmt + un) % (val)
         return str.ljust(ans, 60)
 
@@ -353,19 +373,21 @@ class Test(Function):
     address without any processing.
     """
 
-    def val2hex(self, val: int) -> int:
+    def val2hex(self, val, un) -> int:
         """
         This function just returns its input.
         """
         return val
 
-    def format(self, val: int, addr: int) -> str:
+    def format(self, val: int, addr: int, units: str) -> str:
         """
         Emit str for pretty printing.
 
         args:
-            val: any, ignored
-            addr: board address, ignored
+            val: ignored
+            un: ignored
+            addr: ignored
+            units: ignored
 
         returns:
             formatted function description
@@ -401,9 +423,10 @@ class Action():
     if the parent Function is of Enum or Scalar type.
     """
 
-    def __init__(self, fun, val, en: bool = False, br: bool = False, nop: bool = False, ramp: dict = {}, addr=None):
+    def __init__(self, fun, val, un, en: bool = False, br: bool = False, nop: bool = False, ramp: dict = {}, addr=None):
         self.fun = fun
         self.val = val
+        self.units = un
         self.en = en
         self.br = br
         self.nop = nop
@@ -428,15 +451,16 @@ class Action():
                 ans = "RAMPLOG "
             else:
                 ans = "RAMP "
-            ans += self.fun.format(self.ramp['end'],
-                                   None).rstrip().replace('=', 'TO', 1)
+            ans += self.fun.format(self.ramp['end'], None,
+                                   self.ramp.get('units')).rstrip().replace('=', 'TO', 1)
             ans += " IN %s " % (TimedAction.timefmt(None,
                                 False, self.ramp['time']))
             ans += "(%d STEPS) " % self.ramp['steps']
             if len(ans) < sz:
                 ans = str.ljust(ans, sz)
         else:
-            ans = str.ljust(self.fun.format(self.val, self.addr), sz)
+            ans = str.ljust(self.fun.format(
+                self.val, self.addr, self.units), sz)
         ans += str.rjust("(%d)" % (self.fun.ID), 6)
         if not self.en:
             ans += " SKIP"
@@ -473,7 +497,8 @@ class Action():
                 self.val = v0 + dv * i
             if isEnum:
                 self.val = int(self.val)
-            l.append({'abst': atime, 'val': self.val})
+            l.append({'abst': atime, 'val': self.val,
+                     'units': self.ramp.get('units')})
             atime += dt
         return l
 
@@ -487,6 +512,7 @@ class Action():
         Each dict in the list has at least the following key : value pairs
         'fun' : parent Function
         'val' : requested value
+        'units' : units for scalar actions or None
         'addr': int - board address
         'bin' : uint16 - data to be written on the bus
         'en' : bool - True if the action is enabled
@@ -498,13 +524,13 @@ class Action():
         aux = {'addr': self.addr, 'en': self.en,
                'br': self.br, 'nop': self.nop, 'db': db, 'fun': self.fun}
         if not self.ramp:
-            hexval = self.fun.val2hex(self.val)
-            return [{'abst': atime, 'val': self.val, 'bin': hexval} | aux,]
+            hexval = self.fun.val2hex(self.val, self.units)
+            return [{'abst': atime, 'val': self.val, 'units': self.units, 'bin': hexval} | aux,]
         else:
             self.val = cval['ids'][self.fun.ID]  # no ramps for Test Actions
             l = self._unramp(atime)
             for e in l:
-                hexval = self.fun.val2hex(e['val'])
+                hexval = self.fun.val2hex(e['val'], e['units'])
                 e |= {'bin': hexval} | aux
             cval['ids'][self.fun.ID] = l[-1]['val']
             return l
