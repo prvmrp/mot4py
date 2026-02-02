@@ -403,13 +403,13 @@ class TestWin(QtWidgets.QWidget):
             val = self.fd[i].brd.get_val(self.fd[i].ch)
         elif isinstance(self.fd[i], Binary):
             addr = self.fd[i].brd.get_addr(self.fd[i].ch)
-            val = self.fd[i].val2hex(self.stackbin.getval())
+            val = self.fd[i].val2hex(self.stackbin.getval(), None)
         elif isinstance(self.fd[i], Enum):
             addr = self.fd[i].brd.get_addr(self.fd[i].ch)
-            val = self.fd[i].val2hex(self.stackenum.getval())
+            val = self.fd[i].val2hex(self.stackenum.getval(), None)
         elif isinstance(self.fd[i], Scalar):
             addr = self.fd[i].brd.get_addr(self.fd[i].ch)
-            val = self.fd[i].val2hex(self.stackscalar.getval())
+            val = self.fd[i].val2hex(self.stackscalar.getval(), None)
         elif isinstance(self.fd[i], Test):
             addr = self.stacktest.getaddr()
             val = self.stacktest.getval()

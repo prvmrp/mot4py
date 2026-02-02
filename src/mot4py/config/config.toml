@@ -61,7 +61,7 @@ id = 'DO1_1'
 [SPB.DO1_2]
 desc = 'Repumper Lock Hold'
 type = 'Binary'
-id = 'DO1_1'
+id = 'DO1_2'
 
 [SPB.DDS1_F0]
 desc = 'Ref Rep Freq'
@@ -143,27 +143,27 @@ type = 'Scalar'
 id = 'AO1_3'
 min = -1200.0
 max = 1200.0
-fmt = '%.3f'
+fmt = '%.2f'
 units = 'mA'
 compile = 'cComp_Coils'
 
 [SPB.AO1_4]
-desc = 'Shim y Current'
+desc = 'Shim Y Current'
 type = 'Scalar'
 id = 'AO1_4'
 min = -1200.0
 max = 1200.0
-fmt = '%.3f'
+fmt = '%.2f'
 units = 'mA'
 compile = 'cComp_Coils'
 
 [SPB.AO1_5]
-desc = 'Shim X Current'
+desc = 'Shim Z Current'
 type = 'Scalar'
 id = 'AO1_5'
 min = -1200.0
 max = 1200.0
-fmt = '%.3f'
+fmt = '%.2f'
 units = 'mA'
 compile = 'cComp_Coils'
 
