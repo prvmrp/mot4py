@@ -9,7 +9,7 @@ from mot4py import spbboards
 from mot4py.utils import *
 
 
-def cMOT_Current(val: float) -> float:
+def cMOT_Current(val: float, units: str) -> float:
     """
     Converts the current in A to the value in V for Delta Electronika power supply
 
@@ -19,10 +19,13 @@ def cMOT_Current(val: float) -> float:
     returns:
             float: to be used as current-programming voltage (here Volt)
     """
+    if units == 'mA':
+        val /= 1.e3
+
     return 0.05*val
 
 
-def cComp_Coils(val: float) -> float:
+def cComp_Coils(val: float, units: str) -> float:
 
     return val / 97.5
 
