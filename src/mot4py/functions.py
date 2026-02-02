@@ -478,13 +478,13 @@ class Action():
         It should be called only by the method 'compile()'.
         """
         delta = self.ramp['end'] - self.val
-        if self.val != 0:
-            ratio = self.ramp['end'] / self.val
-        else:
-            raise MOT4PyError("log ramp starting from 0\n")
         dt = self.ramp['time'] // self.ramp['steps']
         if self.ramp['log']:
-            dv = ratio ** (1. / self.ramp['steps'])
+            if self.val != 0:
+                ratio = self.ramp['end'] / self.val
+                dv = ratio ** (1. / self.ramp['steps'])
+            else:
+                raise MOT4PyError("log ramp starting from 0\n")
         else:
             dv = delta / self.ramp['steps']
         l = []
