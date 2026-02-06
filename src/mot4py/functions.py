@@ -9,7 +9,7 @@ from mot4py import spbboards
 from mot4py.utils import *
 
 
-def cMOT_Current(val: float, units: str) -> float:
+def cMOT_Current(val: float) -> float:
     """
     Converts the current in A to the value in V for Delta Electronika power supply
 
@@ -18,25 +18,15 @@ def cMOT_Current(val: float, units: str) -> float:
 
     returns:
             float: to be used as current-programming voltage (here Volt)
+            float: scaling factor: 1 for A, 0.001 for mA
+
     """
-    if units == 'mA':
-        val /= 1.e3
-
-    return 0.05*val
+    return 0.05 * val
 
 
-def cComp_Coils(val: float, units: str) -> float:
+def cComp_Coils(val: float) -> float:
 
     return val / 97.5
-
-
-def cComp_Freq(val: float, units: str) -> float:
-    if units == 'kHz':
-        val *= 1.e3
-    elif units == 'MHz':
-        val *= 1.e6
-
-    return val
 
 
 class Function():
@@ -68,6 +58,7 @@ class Function():
         self.desc = d.get('desc')
         self.fmt = d.get('fmt')
         self.units = d.get('units')
+        self.altunits = d.get('altunits')
         self.comp = d.get('compile')
         self.max = d.get('max')
         self.min = d.get('min')
@@ -133,7 +124,7 @@ class Simple(Function):
             or 0 if 'compile' is not provided 
         """
         if self.comp:
-            return eval(self.comp + '()')
+            return eval(self.comp + '()'), None
         else:
             return 0
 
@@ -301,6 +292,8 @@ class Scalar(Function):
         super().__init__(name, id, d, brds)
         if not self.fmt:
             self.fmt = "%.3f%"
+        if not self.altunits:
+            self.altunits = {}
 
     def val2hex(self, val: int, un: str) -> int:
         """
@@ -322,8 +315,10 @@ class Scalar(Function):
              uint16
         """
 
+        if un and self.altunits.get(un):
+            val *= self.altunits.get(un)
         if self.comp:
-            v1 = eval(f'{self.comp}({val}, "{un}")')
+            v1 = eval(f'{self.comp}({val})')
         else:
             v1 = val
         self.brd.set_val(val, self.ch)
@@ -434,6 +429,7 @@ class Action():
         self.br = br
         self.nop = nop
         self.ramp = ramp
+        self.scale = None
         self.addr = addr if addr is not None else self.fun.brd.get_addr(
             self.fun.ch)
 
@@ -480,19 +476,25 @@ class Action():
         This method unrolls the action if it is ramp.
         It should be called only by the method 'compile()'.
         """
-        delta = self.ramp['end'] - self.val
+        start = self.val
+        end = self.ramp['end']
+        if self.fun.altunits and self.fun.altunits.get(self.ramp['units']):
+            end *= self.fun.altunits.get(self.ramp['units'])
+            start *= self.fun.altunits.get(self.ramp['units'])
+        delta = end - start
         dt = self.ramp['time'] // self.ramp['steps']
         if self.ramp['log']:
-            if self.val != 0:
-                ratio = self.ramp['end'] / self.val
+            if start != 0:
+                ratio = end / start
                 dv = ratio ** (1. / self.ramp['steps'])
             else:
                 raise MOT4PyError("log ramp starting from 0\n")
         else:
             dv = delta / self.ramp['steps']
         l = []
-        v0 = self.val
+        v0 = start
         isEnum = isinstance(self.fun, Enum)
+        un = None if isEnum else self.fun.units
         for i in range(self.ramp['steps'] + 1):
             if self.ramp['log']:
                 self.val = v0 * (dv ** i)
@@ -501,7 +503,7 @@ class Action():
             if isEnum:
                 self.val = int(self.val)
             l.append({'abst': atime, 'val': self.val,
-                     'units': self.ramp.get('units')})
+                      'units': un})
             atime += dt
         return l
 

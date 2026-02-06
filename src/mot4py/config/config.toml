@@ -68,10 +68,10 @@ desc = 'Ref Rep Freq'
 type = 'Scalar'
 id = 'DDS1_F0'
 min = 8.5e6
-max = 15.e6
+max = 15.0e6
 fmt = '%.5f'
 units = 'Hz'
-compile = 'cComp_Freq'
+altunits = {'kHz' = 1e3, 'MHz' = 1e6} 
 
 [SPB.DDS1_A0]
 desc = 'Ref Rep Amp'
@@ -85,10 +85,10 @@ desc = 'Ref Cool Freq'
 type = 'Scalar'
 id = 'DDS1_F1'
 min = 8.5e6
-max = 15.e6
+max = 15.0e6
 fmt = '%.5f'
 units = 'Hz'
-compile = 'cComp_Freq'
+altunits = {'kHz' = 1e3, 'MHz' = 1e6}
 
 [SPB.DDS1_A1]
 desc = 'Ref Cool Amp'
@@ -103,7 +103,7 @@ type = 'Scalar'
 id = 'DDS2_F0'
 fmt = '%.5f'
 units = 'Hz'
-compile = 'cComp_Freq'
+altunits = {'kHz' = 1e3, 'MHz' = 1e6}
 
 [SPB.DDS2_A0]
 desc = 'AOM Amp'
@@ -118,7 +118,7 @@ type = 'Scalar'
 id = 'DDS2_F1'
 fmt = '%.5f'
 units = 'Hz'
-compile = 'cComp_Freq'
+altunits = {'kHz' = 1e3, 'MHz' = 1e6}
 
 [SPB.DDS2_A1]
 desc = 'ODT Amp'
@@ -135,6 +135,7 @@ min = 0.0
 max = 20.0
 fmt = '%.3f'
 units = 'A'
+altunits = {'mA' = 0.001}
 compile = 'cMOT_Current'
 
 [SPB.AO1_3]

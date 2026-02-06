@@ -115,7 +115,7 @@ def loadcb():
             error(err.args[0])
         state['prog'] = fn
         update()
-        mainwin.statusbar.showMessage("Prog. loaded")
+        mainwin.statusbar.showMessage("Loaded " + os.path.basename(fn))
 
 
 def VCDcb():
@@ -128,7 +128,8 @@ def reloadcb():
 
     if state['prog']:
         prog = Parser(state['prog'], Fundict)
-        mainwin.statusbar.showMessage("Prog. reloaded")
+        mainwin.statusbar.showMessage(
+            "Reloaded " + os.path.basename(state['prog']))
 
 
 def _run():
