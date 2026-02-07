@@ -4,7 +4,7 @@ import time
 from importlib.resources import files
 from pathlib import Path
 
-from lark import Lark, ParseTree, visitors
+from lark import Lark, ParseTree, exceptions, visitors
 
 from mot4py.functions import *
 from mot4py.utils import *

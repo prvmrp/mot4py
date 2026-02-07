@@ -111,6 +111,9 @@ def loadcb():
     if fn:
         try:
             prog = Parser(fn, Fundict)
+        except exceptions.UnexpectedToken as err:
+            msg = f'Parse error at line {err.line}, col. {err.column}'
+            error(msg)
         except MOT4PyError as err:
             error(err.args[0])
         state['prog'] = fn
@@ -127,7 +130,13 @@ def reloadcb():
     global prog
 
     if state['prog']:
-        prog = Parser(state['prog'], Fundict)
+        try:
+            prog = Parser(state['prog'], Fundict)
+        except exceptions.UnexpectedToken as err:
+            msg = f'Parse error at line {err.line}, col. {err.column}'
+            error(msg)
+        except MOT4PyError as err:
+            error(err.args[0])
         mainwin.statusbar.showMessage(
             "Reloaded " + os.path.basename(state['prog']))
 
@@ -541,7 +550,13 @@ def main():
 
     if args.fname is not None:
         state['gui'] = False
-        prog = Parser(args.fname, Fundict)
+        try:
+            prog = Parser(args.fname, Fundict)
+        except exceptions.UnexpectedToken as err:
+            msg = f'Parse error at line {err.line}, col. {err.column}'
+            error(msg)
+        except MOT4PyError as err:
+            error(err.args[0])
         state['prog'] = args.fname
         _run()
         while state['run']:
