@@ -234,7 +234,11 @@ class Enum(Function):
         raises:
             MOT4PyError: if val > N
         """
-        if self.brd._lutmax >= val:
+        if self.max:
+            val = min(val, self.max)
+        if self.max:
+            val = max(val, self.min)
+        if self.brd._lutmax >= val and val >= 0:
             self.brd.set_val(val, self.ch)
             return val
         else:
@@ -317,6 +321,10 @@ class Scalar(Function):
 
         if un and self.altunits.get(un):
             val *= self.altunits.get(un)
+        if self.max:
+            val = min(val, self.max)
+        if self.min:
+            val = max(val, self.min)
         if self.comp:
             v1 = eval(f'{self.comp}({val})')
         else:
