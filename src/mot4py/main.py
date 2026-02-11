@@ -146,6 +146,7 @@ def _run():
 
     if state['prog']:
         try:
+            fpga.check()
             while not state['debug']:
                 time.sleep(0.1)
                 s, n = fpga.get_stat()
@@ -202,6 +203,7 @@ def runcb():
 
 
 def resetcb():
+    fpga.check()
     fpga.reset()
     if state['gui']:
         msg = "FPGA reset" if fpga.dev else "FPGA not found"
@@ -211,6 +213,7 @@ def resetcb():
 def stopcb():
     global state
 
+    fpga.check()
     fpga.stop()
     if state['gui']:
         timer.stop()
@@ -423,6 +426,7 @@ class TestWin(QtWidgets.QWidget):
         elif isinstance(self.fd[i], Test):
             addr = self.stacktest.getaddr()
             val = self.stacktest.getval()
+        fpga.check()
         fpga.set(addr, val)
 
     def createComboBox(self, fundict):

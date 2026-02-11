@@ -18,7 +18,7 @@ class Ztex():
     def __init__(self, debug: bool):
         self.debug = debug
         self.exttrg = False
-        self.dev = usb.core.find(idVendor=self.vid, idProduct=self.pid)
+        self._finddev()
         if self.dev:
             if self.dev.is_kernel_driver_active(1):
                 self.dev.detach_kernel_driver_active(1)
@@ -33,6 +33,20 @@ class Ztex():
             self.large = False
             self.bufsz = 14 << 18
         self.buf = bytearray()
+
+    def _finddev(self):
+        self.dev = usb.core.find(idVendor=self.vid, idProduct=self.pid)
+        if self.dev:
+            if self.dev.is_kernel_driver_active(1):
+                self.dev.detach_kernel_driver_active(1)
+            self.dev.set_configuration()
+
+    def check(self):
+        try:
+            fw, brd = self.get_id()
+        except usb.core.USBError:
+            print('USB Error')
+            self._finddev()
 
     def reset(self) -> None:
         if self.dev:
