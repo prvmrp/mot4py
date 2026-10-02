@@ -100,7 +100,7 @@ class Ztex():
             for a in l:
                 if self.large:
                     if k % 2:
-                        self._d2cmd(packaddr, packa2, a)
+                        self._d2cmd(packaddr, a, packa2)
                         packaddr += 1
                     else:
                         packa2 = a
@@ -203,7 +203,7 @@ class Ztex():
             if self.large:
                 if proglen % 2:
                     proglist.append(
-                        [{'relt': 10, 'bin': 0, 'addr': 0, 'nop': True},])
+                        [{'relt': 10, 'bin': 0, 'addr': 0, 'nop': False},])
                     dummy = True
                 else:
                     dummy = False

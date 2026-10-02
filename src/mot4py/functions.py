@@ -624,7 +624,7 @@ class Loop():
     At least one between init and (inner + iterator) must be specified
     """
     # interval in INIT between consecutive actions. Use 30us to deal with linear firmware in DDS
-    _initDT = 30000
+    _initDT = 30_000
     # min DT in ns. The Bus runs at 10 MHz.
     _minDT = 100
     # max DT in ns, 114 min, an integer number of min. < 100 * 2**36 ns

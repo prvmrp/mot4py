@@ -8,7 +8,7 @@ class SPBBrd():
                 'AO1', 'AO4', 'AO8',
                 'RF9958', 'RF9958F', 'RF9958LIN',
                 'RF9959',
-                'RF9912', 'RF9912'
+                'RF9912', 'RF9912LIN'
                 )
 
     _vmin = None
@@ -264,6 +264,12 @@ class RF9912LIN(SPBBrd):
         super().set_val(nv, RF9912LIN._ch2ofs.get(ch, 0))
 
     def param2val(self, val, ch):
+        # this is messy and the firmware of the boards should be changed
+        if ch[0] == 'A':
+            if val > 127:
+                val = 0
+            else:
+                val <<= 1
         return self._lin_param2val(val, ch)
 
 
